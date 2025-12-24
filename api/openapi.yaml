@@ -1,0 +1,37 @@
+openapi: 3.0.0
+info:
+  title: Asset Manager API
+  version: 1.0.0
+paths:
+  /assets:
+    post:
+      summary: Upload an asset
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: Asset created
+    get:
+      summary: List assets
+      responses:
+        '200':
+          description: List of assets
+  /assets/{id}:
+    delete:
+      summary: Delete an asset
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Asset deleted
