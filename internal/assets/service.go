@@ -35,9 +35,9 @@ func NewService(client *ent.Client, storage FileStorage, validator *Validator, a
 	}
 }
 
-// getAbsolutePath joins the base assets directory with the relative path stored in DB
 func (s *Service) getAbsolutePath(relativePath string) string {
-	return filepath.Join(s.assetsDir, relativePath)
+	abs, _ := filepath.Abs(filepath.Join(s.assetsDir, relativePath))
+	return abs
 }
 
 func (s *Service) Upload(ctx context.Context, req UploadRequest) (*Asset, error) {
@@ -49,12 +49,10 @@ func (s *Service) Upload(ctx context.Context, req UploadRequest) (*Asset, error)
 	ext := strings.ToLower(filepath.Ext(req.Filename))
 	fileType := s.determineFileType(ext)
 
-	// We only save the relative path in the database
-	relativePath := filepath.Join(string(fileType), id+ext)
-	fullPath := s.getAbsolutePath(relativePath)
+	managedPath := s.getAbsolutePath(id + ext)
 
-	if err := s.storage.Write(fullPath, req.File); err != nil {
-		return nil, fmt.Errorf("failed to write file: %w", err)
+	if err := s.storage.Write(managedPath, req.File); err != nil {
+		return nil, fmt.Errorf("failed to write file to managed folder: %w", err)
 	}
 
 	saved, err := s.client.Asset.Create().
@@ -63,11 +61,11 @@ func (s *Service) Upload(ctx context.Context, req UploadRequest) (*Asset, error)
 		SetFileType(asset.FileType(fileType)).
 		SetExtension(ext).
 		SetFileSizeBytes(req.Size).
-		SetStoragePath(relativePath). // Store relative path
+		SetStoragePath(managedPath).
 		SetCreatedAt(time.Now()).
 		Save(ctx)
 	if err != nil {
-		s.storage.Delete(fullPath)
+		s.storage.Delete(managedPath)
 		return nil, fmt.Errorf("failed to save metadata: %w", err)
 	}
 
@@ -116,9 +114,8 @@ func (s *Service) Delete(ctx context.Context, id string) error {
 		return err
 	}
 
-	fullPath := s.getAbsolutePath(a.StoragePath)
-	if err := s.storage.Delete(fullPath); err != nil {
-		log.Printf("failed to delete file from storage: %s, error: %v", fullPath, err)
+	if err := s.storage.Delete(a.StoragePath); err != nil {
+		log.Printf("failed to delete file from managed storage: %s, error: %v", a.StoragePath, err)
 	}
 
 	return s.client.Asset.DeleteOneID(id).Exec(ctx)
@@ -132,9 +129,8 @@ func (s *Service) Get(ctx context.Context, id string) (*Asset, error) {
 	return s.mapToDomain(a), nil
 }
 
-// GetFullStoragePath is used by handlers to serve the file
 func (s *Service) GetFullStoragePath(a *Asset) string {
-	return s.getAbsolutePath(a.StoragePath)
+	return a.StoragePath
 }
 
 func (s *Service) mapToDomain(e *ent.Asset) *Asset {

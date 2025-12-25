@@ -38,7 +38,7 @@ func Load() *Config {
 			Path: getEnv("DATABASE_PATH", "./data/assets.db"),
 		},
 		Storage: StorageConfig{
-			AssetsDir: getEnv("STORAGE_ASSETS_DIR", "./static/assets"),
+			AssetsDir: getEnv("STORAGE_ASSETS_DIR", "./cdn/assets"),
 		},
 	}
 }

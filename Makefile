@@ -9,10 +9,11 @@ run: generate
 	go run cmd/server/main.go
 
 build: generate
+	cd web && npm run build
 	go build -o bin/server cmd/server/main.go
 
 clean:
-	rm -rf bin/ data/assets.db static/
+	rm -rf bin/ data/assets.db static/ web/dist
 
 test: generate
 	go test ./...

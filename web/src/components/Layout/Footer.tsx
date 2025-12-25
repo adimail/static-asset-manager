@@ -8,7 +8,7 @@ export function Footer() {
 
   useEffect(() => {
     axios
-      .get("http://localhost:8080/internal/health")
+      .get("/internal/health")
       .then((res) => {
         setIsHealthy(res.data?.status === "healthy");
       })

@@ -2,6 +2,8 @@ package api
 
 import (
 	"net/http"
+	"os"
+	"path/filepath"
 
 	"github.com/adimail/asset-manager/internal/api/handlers"
 	"github.com/adimail/asset-manager/internal/assets"
@@ -22,6 +24,21 @@ func NewServer(assetService *assets.Service) http.Handler {
 	api.HandleFunc("/assets", h.List).Methods("GET")
 	api.HandleFunc("/assets/{id}", h.Delete).Methods("DELETE")
 	api.HandleFunc("/assets/{id}/download", h.Download).Methods("GET")
+
+	staticPath := "web/dist"
+	indexPath := "index.html"
+
+	r.PathPrefix("/").Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		path := filepath.Join(staticPath, r.URL.Path)
+
+		fi, err := os.Stat(path)
+		if os.IsNotExist(err) || fi.IsDir() {
+			http.ServeFile(w, r, filepath.Join(staticPath, indexPath))
+			return
+		}
+
+		http.ServeFile(w, r, path)
+	}))
 
 	c := cors.New(cors.Options{
 		AllowedOrigins: []string{"*"},
