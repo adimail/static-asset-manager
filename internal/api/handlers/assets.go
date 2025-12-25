@@ -58,3 +58,13 @@ func (h *AssetHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	}
 	w.WriteHeader(http.StatusNoContent)
 }
+
+func (h *AssetHandler) Download(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	asset, err := h.service.Get(r.Context(), vars["id"])
+	if err != nil {
+		http.Error(w, "Asset not found", http.StatusNotFound)
+		return
+	}
+	http.ServeFile(w, r, asset.StoragePath)
+}

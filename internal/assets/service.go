@@ -2,19 +2,17 @@ package assets
 
 import (
 	"context"
+	"fmt"
 	"io"
+	"log"
 	"path/filepath"
+	"strings"
 	"time"
 
+	"github.com/adimail/asset-manager/ent"
+	"github.com/adimail/asset-manager/ent/asset"
 	"github.com/google/uuid"
 )
-
-type Repository interface {
-	Create(ctx context.Context, a *Asset) error
-	List(ctx context.Context) ([]*Asset, error)
-	Delete(ctx context.Context, id string) error
-	Get(ctx context.Context, id string) (*Asset, error)
-}
 
 type FileStorage interface {
 	Write(path string, data io.Reader) error
@@ -22,54 +20,113 @@ type FileStorage interface {
 }
 
 type Service struct {
-	repo      Repository
-	fs        FileStorage
+	client    *ent.Client
+	storage   FileStorage
+	validator *Validator
 	assetsDir string
 }
 
-func NewService(repo Repository, fs FileStorage, assetsDir string) *Service {
-	return &Service{repo: repo, fs: fs, assetsDir: assetsDir}
+func NewService(client *ent.Client, storage FileStorage, validator *Validator, assetsDir string) *Service {
+	return &Service{
+		client:    client,
+		storage:   storage,
+		validator: validator,
+		assetsDir: assetsDir,
+	}
 }
 
 func (s *Service) Upload(ctx context.Context, req UploadRequest) (*Asset, error) {
+	if err := s.validator.Validate(req); err != nil {
+		return nil, err
+	}
+
 	id := uuid.New().String()
-	ext := filepath.Ext(req.Filename)
-	fileType := DetermineFileType(req.Filename)
-	storagePath := GeneratePath(s.assetsDir, fileType, id, ext)
+	ext := strings.ToLower(filepath.Ext(req.Filename))
+	fileType := s.determineFileType(ext)
 
-	if err := s.fs.Write(storagePath, req.File); err != nil {
-		return nil, err
+	relativePath := filepath.Join(string(fileType), id+ext)
+	storagePath := filepath.Join(s.assetsDir, relativePath)
+
+	if err := s.storage.Write(storagePath, req.File); err != nil {
+		return nil, fmt.Errorf("failed to write file: %w", err)
 	}
 
-	asset := &Asset{
-		ID:               id,
-		OriginalFilename: req.Filename,
-		FileType:         fileType,
-		Extension:        ext,
-		FileSizeBytes:    req.Size,
-		StoragePath:      storagePath,
-		CreatedAt:        time.Now(),
+	saved, err := s.client.Asset.Create().
+		SetID(id).
+		SetOriginalFilename(req.Filename).
+		SetFileType(asset.FileType(fileType)).
+		SetExtension(ext).
+		SetFileSizeBytes(req.Size).
+		SetStoragePath(storagePath).
+		SetCreatedAt(time.Now()).
+		Save(ctx)
+	if err != nil {
+		s.storage.Delete(storagePath)
+		return nil, fmt.Errorf("failed to save metadata: %w", err)
 	}
 
-	if err := s.repo.Create(ctx, asset); err != nil {
-		s.fs.Delete(storagePath)
-		return nil, err
-	}
-
-	return asset, nil
+	return s.mapToDomain(saved), nil
 }
 
 func (s *Service) List(ctx context.Context) ([]*Asset, error) {
-	return s.repo.List(ctx)
+	list, err := s.client.Asset.Query().
+		Order(ent.Desc(asset.FieldCreatedAt)).
+		All(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]*Asset, len(list))
+	for i, item := range list {
+		result[i] = s.mapToDomain(item)
+	}
+	return result, nil
 }
 
 func (s *Service) Delete(ctx context.Context, id string) error {
-	asset, err := s.repo.Get(ctx, id)
+	a, err := s.client.Asset.Get(ctx, id)
 	if err != nil {
 		return err
 	}
-	if err := s.fs.Delete(asset.StoragePath); err != nil {
-		// log error but continue
+
+	if err := s.storage.Delete(a.StoragePath); err != nil {
+		log.Printf("failed to delete file from storage: %s, error: %v", a.StoragePath, err)
 	}
-	return s.repo.Delete(ctx, id)
+
+	return s.client.Asset.DeleteOneID(id).Exec(ctx)
+}
+
+func (s *Service) Get(ctx context.Context, id string) (*Asset, error) {
+	a, err := s.client.Asset.Get(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	return s.mapToDomain(a), nil
+}
+
+func (s *Service) mapToDomain(e *ent.Asset) *Asset {
+	return &Asset{
+		ID:               e.ID,
+		OriginalFilename: e.OriginalFilename,
+		FileType:         FileType(e.FileType),
+		Extension:        e.Extension,
+		FileSizeBytes:    e.FileSizeBytes,
+		StoragePath:      e.StoragePath,
+		CreatedAt:        e.CreatedAt,
+	}
+}
+
+func (s *Service) determineFileType(ext string) FileType {
+	switch ext {
+	case ".jpg", ".jpeg", ".png", ".gif", ".webp", ".svg":
+		return FileTypeImage
+	case ".mp4", ".mov", ".webm", ".avi", ".mkv":
+		return FileTypeVideo
+	case ".mp3", ".wav", ".ogg", ".flac":
+		return FileTypeAudio
+	case ".pdf", ".doc", ".docx", ".txt", ".xls", ".xlsx":
+		return FileTypeDocument
+	default:
+		return FileTypeOther
+	}
 }

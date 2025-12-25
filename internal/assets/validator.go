@@ -18,7 +18,7 @@ func (v *Validator) Validate(req UploadRequest) error {
 	if req.Size > v.MaxUploadSize {
 		return errors.New("file too large")
 	}
-	if req.Filename == "" {
+	if strings.TrimSpace(req.Filename) == "" {
 		return errors.New("filename required")
 	}
 	ext := strings.ToLower(filepath.Ext(req.Filename))

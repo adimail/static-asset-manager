@@ -1,1 +1,125 @@
 @import "tailwindcss";
+
+@theme {
+  --color-bg: var(--color-bg);
+  --color-sidebar: var(--color-sidebar);
+  --color-surface: var(--color-surface);
+  --color-surface-highlight: var(--color-surface-highlight);
+  --color-border: var(--color-border);
+
+  --color-primary: var(--color-primary);
+  --color-primary-hover: var(--color-primary-hover);
+  --color-primary-light: var(--color-primary-light);
+
+  --color-text-primary: var(--color-text-primary);
+  --color-text-secondary: var(--color-text-secondary);
+  --color-text-muted: var(--color-text-muted);
+
+  --font-sans: "Inter", "SF Pro Display", -apple-system, system-ui, sans-serif;
+
+  --animate-fade-in: fadeIn 0.3s ease-out;
+  --animate-slide-up: slideUp 0.4s ease-out;
+  --animate-scale-in: scaleIn 0.2s ease-out;
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  @keyframes slideUp {
+    from {
+      transform: translateY(10px);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+  @keyframes scaleIn {
+    from {
+      transform: scale(0.95);
+      opacity: 0;
+    }
+    to {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+}
+
+:root {
+  --color-bg: #fff7cc;
+  --color-sidebar: #ffffff;
+  --color-surface: #fffdf2;
+  --color-surface-highlight: #f3d27a;
+  --color-border: rgba(180, 120, 60, 0.25);
+
+  --color-primary: #d98b45;
+  --color-primary-hover: #c77734;
+  --color-primary-light: rgba(217, 139, 69, 0.18);
+
+  --color-text-primary: #6b3f1d;
+  --color-text-secondary: #9a6a3a;
+  --color-text-muted: #c59a6a;
+}
+
+.dark {
+  --color-bg: #23394d;
+  --color-sidebar: #2f4a63;
+  --color-surface: #2f4a63;
+  --color-surface-highlight: #4f667f;
+  --color-border: rgba(255, 255, 255, 0.14);
+
+  --color-primary: #dae1e9;
+  --color-primary-hover: #4a7399;
+  --color-primary-light: rgba(59, 95, 130, 0.25);
+
+  --color-text-primary: #f1f1f1;
+  --color-text-secondary: #c4ccd3;
+  --color-text-muted: #9aa6b2;
+}
+
+body {
+  background-color: var(--color-bg);
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-muted);
+}
+
+/* Glassmorphism Utilities */
+.glass {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+.dark .glass {
+  background: rgba(30, 41, 59, 0.7);
+}
+
+/* Gradient Text */
+.text-gradient {
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-image: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+}
