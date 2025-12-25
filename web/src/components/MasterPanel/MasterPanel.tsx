@@ -1,9 +1,14 @@
 import { useMemo, useEffect, useRef } from "react";
-import { useAssets } from "../../hooks/useAssets";
+import {
+  useAssets,
+  useBulkDeleteAssets,
+  useBulkCompressAssets,
+} from "../../hooks/useAssets";
 import { useStore } from "../../store/useStore";
 import { FilterBar } from "./FilterBar";
 import { AssetItem } from "./AssetItem";
-import { FolderOpen, Info } from "lucide-react";
+import { FolderOpen, Info, CheckSquare, X } from "lucide-react";
+import { toast } from "sonner";
 import {
   Pagination,
   PaginationContent,
@@ -21,9 +26,17 @@ export function MasterPanel() {
     sortOrder,
     selectedAssetId,
     selectAsset,
+    isSelectionMode,
+    selectedAssetIds,
+    clearSelection,
+    toggleSelectionMode,
+    selectAll,
+    setTagModalOpen,
   } = useStore();
 
   const { data, isLoading } = useAssets(currentPage);
+  const { mutate: bulkDelete } = useBulkDeleteAssets();
+  const { mutate: bulkCompress } = useBulkCompressAssets();
   const listRef = useRef<HTMLDivElement>(null);
 
   const processedAssets = useMemo(() => {
@@ -92,12 +105,6 @@ export function MasterPanel() {
         const prevIndex =
           currentIndex === -1 ? 0 : Math.max(currentIndex - 1, 0);
         selectAsset(processedAssets[prevIndex].id);
-      } else if (e.key === "Home") {
-        e.preventDefault();
-        selectAsset(processedAssets[0].id);
-      } else if (e.key === "End") {
-        e.preventDefault();
-        selectAsset(processedAssets[processedAssets.length - 1].id);
       }
     };
 
@@ -114,8 +121,42 @@ export function MasterPanel() {
     }
   }, [selectedAssetId]);
 
+  const handleBulkDelete = () => {
+    if (selectedAssetIds.length === 0) return;
+    if (
+      !confirm(
+        `Are you sure you want to delete ${selectedAssetIds.length} assets?`,
+      )
+    )
+      return;
+
+    bulkDelete(selectedAssetIds, {
+      onSuccess: () => {
+        toast.success(`Successfully deleted ${selectedAssetIds.length} assets`);
+        clearSelection();
+      },
+      onError: () => {
+        toast.error("Failed to delete assets");
+      },
+    });
+  };
+
+  const handleBulkCompress = () => {
+    if (selectedAssetIds.length === 0) return;
+    bulkCompress(selectedAssetIds, {
+      onSuccess: () => {
+        clearSelection();
+      },
+    });
+  };
+
+  const handleBulkTag = () => {
+    if (selectedAssetIds.length === 0) return;
+    setTagModalOpen(true);
+  };
+
   return (
-    <div className="flex flex-col h-full bg-gradient-to-b from-sidebar to-bg border-r border-border">
+    <div className="flex flex-col h-full bg-gradient-to-b from-sidebar to-bg border-r border-border relative">
       <FilterBar />
 
       <div className="px-4 py-2 flex items-center justify-between bg-surface-highlight/10 border-b border-border/30">
@@ -125,11 +166,17 @@ export function MasterPanel() {
             Showing {processedAssets.length} of {data?.total_count || 0} assets
           </span>
         </div>
+        <button
+          onClick={toggleSelectionMode}
+          className="text-[10px] font-bold uppercase tracking-widest text-primary hover:underline"
+        >
+          {isSelectionMode ? "Cancel Selection" : "Select Multiple"}
+        </button>
       </div>
 
       <div
         ref={listRef}
-        className="flex-1 overflow-y-auto p-3 space-y-2 focus:outline-none"
+        className="flex-1 overflow-y-auto p-3 space-y-2 focus:outline-none pb-20"
       >
         {isLoading ? (
           <div className="flex flex-col items-center justify-center h-32">
@@ -147,7 +194,49 @@ export function MasterPanel() {
         )}
       </div>
 
-      {totalPages > 1 && (
+      {isSelectionMode && (
+        <div className="absolute bottom-0 left-0 right-0 bg-surface border-t border-primary p-4 shadow-lg animate-slide-up z-20 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <span className="font-bold text-primary">
+              {selectedAssetIds.length} selected
+            </span>
+            <button
+              onClick={() => selectAll(processedAssets.map((a) => a.id))}
+              className="text-xs text-text-secondary hover:underline"
+            >
+              Select All
+            </button>
+            <button
+              onClick={clearSelection}
+              className="text-xs text-text-secondary hover:underline"
+            >
+              Clear
+            </button>
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={handleBulkCompress}
+              className="px-3 py-1 bg-amber-600 text-white text-xs font-bold rounded hover:bg-amber-700 cursor-pointer"
+            >
+              Compress
+            </button>
+            <button
+              onClick={handleBulkDelete}
+              className="px-3 py-1 bg-red-500 text-white text-xs font-bold rounded hover:bg-red-600 cursor-pointer"
+            >
+              Delete
+            </button>
+            <button
+              onClick={handleBulkTag}
+              className="px-3 py-1 bg-primary text-white text-xs font-bold rounded hover:bg-primary-hover cursor-pointer"
+            >
+              Tag
+            </button>
+          </div>
+        </div>
+      )}
+
+      {totalPages > 1 && !isSelectionMode && (
         <div className="p-4 border-t border-border bg-surface/50">
           <Pagination>
             <PaginationContent>

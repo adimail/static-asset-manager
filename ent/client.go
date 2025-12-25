@@ -14,7 +14,10 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/adimail/asset-manager/ent/asset"
+	"github.com/adimail/asset-manager/ent/compressionjob"
+	"github.com/adimail/asset-manager/ent/tag"
 )
 
 // Client is the client that holds all ent builders.
@@ -24,6 +27,10 @@ type Client struct {
 	Schema *migrate.Schema
 	// Asset is the client for interacting with the Asset builders.
 	Asset *AssetClient
+	// CompressionJob is the client for interacting with the CompressionJob builders.
+	CompressionJob *CompressionJobClient
+	// Tag is the client for interacting with the Tag builders.
+	Tag *TagClient
 }
 
 // NewClient creates a new client configured with the given options.
@@ -36,6 +43,8 @@ func NewClient(opts ...Option) *Client {
 func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
 	c.Asset = NewAssetClient(c.config)
+	c.CompressionJob = NewCompressionJobClient(c.config)
+	c.Tag = NewTagClient(c.config)
 }
 
 type (
@@ -126,9 +135,11 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	cfg := c.config
 	cfg.driver = tx
 	return &Tx{
-		ctx:    ctx,
-		config: cfg,
-		Asset:  NewAssetClient(cfg),
+		ctx:            ctx,
+		config:         cfg,
+		Asset:          NewAssetClient(cfg),
+		CompressionJob: NewCompressionJobClient(cfg),
+		Tag:            NewTagClient(cfg),
 	}, nil
 }
 
@@ -146,9 +157,11 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	cfg := c.config
 	cfg.driver = &txDriver{tx: tx, drv: c.driver}
 	return &Tx{
-		ctx:    ctx,
-		config: cfg,
-		Asset:  NewAssetClient(cfg),
+		ctx:            ctx,
+		config:         cfg,
+		Asset:          NewAssetClient(cfg),
+		CompressionJob: NewCompressionJobClient(cfg),
+		Tag:            NewTagClient(cfg),
 	}, nil
 }
 
@@ -178,12 +191,16 @@ func (c *Client) Close() error {
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
 	c.Asset.Use(hooks...)
+	c.CompressionJob.Use(hooks...)
+	c.Tag.Use(hooks...)
 }
 
 // Intercept adds the query interceptors to all the entity clients.
 // In order to add interceptors to a specific client, call: `client.Node.Intercept(...)`.
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	c.Asset.Intercept(interceptors...)
+	c.CompressionJob.Intercept(interceptors...)
+	c.Tag.Intercept(interceptors...)
 }
 
 // Mutate implements the ent.Mutator interface.
@@ -191,6 +208,10 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 	switch m := m.(type) {
 	case *AssetMutation:
 		return c.Asset.mutate(ctx, m)
+	case *CompressionJobMutation:
+		return c.CompressionJob.mutate(ctx, m)
+	case *TagMutation:
+		return c.Tag.mutate(ctx, m)
 	default:
 		return nil, fmt.Errorf("ent: unknown mutation type %T", m)
 	}
@@ -304,6 +325,38 @@ func (c *AssetClient) GetX(ctx context.Context, id string) *Asset {
 	return obj
 }
 
+// QueryTags queries the tags edge of a Asset.
+func (c *AssetClient) QueryTags(_m *Asset) *TagQuery {
+	query := (&TagClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(asset.Table, asset.FieldID, id),
+			sqlgraph.To(tag.Table, tag.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, asset.TagsTable, asset.TagsPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryCompressionJobs queries the compression_jobs edge of a Asset.
+func (c *AssetClient) QueryCompressionJobs(_m *Asset) *CompressionJobQuery {
+	query := (&CompressionJobClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(asset.Table, asset.FieldID, id),
+			sqlgraph.To(compressionjob.Table, compressionjob.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, asset.CompressionJobsTable, asset.CompressionJobsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *AssetClient) Hooks() []Hook {
 	return c.hooks.Asset
@@ -329,12 +382,310 @@ func (c *AssetClient) mutate(ctx context.Context, m *AssetMutation) (Value, erro
 	}
 }
 
+// CompressionJobClient is a client for the CompressionJob schema.
+type CompressionJobClient struct {
+	config
+}
+
+// NewCompressionJobClient returns a client for the CompressionJob from the given config.
+func NewCompressionJobClient(c config) *CompressionJobClient {
+	return &CompressionJobClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `compressionjob.Hooks(f(g(h())))`.
+func (c *CompressionJobClient) Use(hooks ...Hook) {
+	c.hooks.CompressionJob = append(c.hooks.CompressionJob, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `compressionjob.Intercept(f(g(h())))`.
+func (c *CompressionJobClient) Intercept(interceptors ...Interceptor) {
+	c.inters.CompressionJob = append(c.inters.CompressionJob, interceptors...)
+}
+
+// Create returns a builder for creating a CompressionJob entity.
+func (c *CompressionJobClient) Create() *CompressionJobCreate {
+	mutation := newCompressionJobMutation(c.config, OpCreate)
+	return &CompressionJobCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of CompressionJob entities.
+func (c *CompressionJobClient) CreateBulk(builders ...*CompressionJobCreate) *CompressionJobCreateBulk {
+	return &CompressionJobCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *CompressionJobClient) MapCreateBulk(slice any, setFunc func(*CompressionJobCreate, int)) *CompressionJobCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &CompressionJobCreateBulk{err: fmt.Errorf("calling to CompressionJobClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*CompressionJobCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &CompressionJobCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for CompressionJob.
+func (c *CompressionJobClient) Update() *CompressionJobUpdate {
+	mutation := newCompressionJobMutation(c.config, OpUpdate)
+	return &CompressionJobUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *CompressionJobClient) UpdateOne(_m *CompressionJob) *CompressionJobUpdateOne {
+	mutation := newCompressionJobMutation(c.config, OpUpdateOne, withCompressionJob(_m))
+	return &CompressionJobUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *CompressionJobClient) UpdateOneID(id string) *CompressionJobUpdateOne {
+	mutation := newCompressionJobMutation(c.config, OpUpdateOne, withCompressionJobID(id))
+	return &CompressionJobUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for CompressionJob.
+func (c *CompressionJobClient) Delete() *CompressionJobDelete {
+	mutation := newCompressionJobMutation(c.config, OpDelete)
+	return &CompressionJobDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *CompressionJobClient) DeleteOne(_m *CompressionJob) *CompressionJobDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *CompressionJobClient) DeleteOneID(id string) *CompressionJobDeleteOne {
+	builder := c.Delete().Where(compressionjob.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &CompressionJobDeleteOne{builder}
+}
+
+// Query returns a query builder for CompressionJob.
+func (c *CompressionJobClient) Query() *CompressionJobQuery {
+	return &CompressionJobQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeCompressionJob},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a CompressionJob entity by its id.
+func (c *CompressionJobClient) Get(ctx context.Context, id string) (*CompressionJob, error) {
+	return c.Query().Where(compressionjob.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *CompressionJobClient) GetX(ctx context.Context, id string) *CompressionJob {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryAsset queries the asset edge of a CompressionJob.
+func (c *CompressionJobClient) QueryAsset(_m *CompressionJob) *AssetQuery {
+	query := (&AssetClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(compressionjob.Table, compressionjob.FieldID, id),
+			sqlgraph.To(asset.Table, asset.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, compressionjob.AssetTable, compressionjob.AssetColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *CompressionJobClient) Hooks() []Hook {
+	return c.hooks.CompressionJob
+}
+
+// Interceptors returns the client interceptors.
+func (c *CompressionJobClient) Interceptors() []Interceptor {
+	return c.inters.CompressionJob
+}
+
+func (c *CompressionJobClient) mutate(ctx context.Context, m *CompressionJobMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&CompressionJobCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&CompressionJobUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&CompressionJobUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&CompressionJobDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown CompressionJob mutation op: %q", m.Op())
+	}
+}
+
+// TagClient is a client for the Tag schema.
+type TagClient struct {
+	config
+}
+
+// NewTagClient returns a client for the Tag from the given config.
+func NewTagClient(c config) *TagClient {
+	return &TagClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `tag.Hooks(f(g(h())))`.
+func (c *TagClient) Use(hooks ...Hook) {
+	c.hooks.Tag = append(c.hooks.Tag, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `tag.Intercept(f(g(h())))`.
+func (c *TagClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Tag = append(c.inters.Tag, interceptors...)
+}
+
+// Create returns a builder for creating a Tag entity.
+func (c *TagClient) Create() *TagCreate {
+	mutation := newTagMutation(c.config, OpCreate)
+	return &TagCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Tag entities.
+func (c *TagClient) CreateBulk(builders ...*TagCreate) *TagCreateBulk {
+	return &TagCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *TagClient) MapCreateBulk(slice any, setFunc func(*TagCreate, int)) *TagCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &TagCreateBulk{err: fmt.Errorf("calling to TagClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*TagCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &TagCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Tag.
+func (c *TagClient) Update() *TagUpdate {
+	mutation := newTagMutation(c.config, OpUpdate)
+	return &TagUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *TagClient) UpdateOne(_m *Tag) *TagUpdateOne {
+	mutation := newTagMutation(c.config, OpUpdateOne, withTag(_m))
+	return &TagUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *TagClient) UpdateOneID(id string) *TagUpdateOne {
+	mutation := newTagMutation(c.config, OpUpdateOne, withTagID(id))
+	return &TagUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Tag.
+func (c *TagClient) Delete() *TagDelete {
+	mutation := newTagMutation(c.config, OpDelete)
+	return &TagDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *TagClient) DeleteOne(_m *Tag) *TagDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *TagClient) DeleteOneID(id string) *TagDeleteOne {
+	builder := c.Delete().Where(tag.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &TagDeleteOne{builder}
+}
+
+// Query returns a query builder for Tag.
+func (c *TagClient) Query() *TagQuery {
+	return &TagQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeTag},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a Tag entity by its id.
+func (c *TagClient) Get(ctx context.Context, id string) (*Tag, error) {
+	return c.Query().Where(tag.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *TagClient) GetX(ctx context.Context, id string) *Tag {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryAssets queries the assets edge of a Tag.
+func (c *TagClient) QueryAssets(_m *Tag) *AssetQuery {
+	query := (&AssetClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(tag.Table, tag.FieldID, id),
+			sqlgraph.To(asset.Table, asset.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, tag.AssetsTable, tag.AssetsPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *TagClient) Hooks() []Hook {
+	return c.hooks.Tag
+}
+
+// Interceptors returns the client interceptors.
+func (c *TagClient) Interceptors() []Interceptor {
+	return c.inters.Tag
+}
+
+func (c *TagClient) mutate(ctx context.Context, m *TagMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&TagCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&TagUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&TagUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&TagDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown Tag mutation op: %q", m.Op())
+	}
+}
+
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		Asset []ent.Hook
+		Asset, CompressionJob, Tag []ent.Hook
 	}
 	inters struct {
-		Asset []ent.Interceptor
+		Asset, CompressionJob, Tag []ent.Interceptor
 	}
 )

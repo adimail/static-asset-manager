@@ -1,8 +1,18 @@
 import { memo } from "react";
-import { FileText, Image, Music, Video, File, Trash2 } from "lucide-react";
+import {
+  FileText,
+  Image,
+  Music,
+  Video,
+  File,
+  Trash2,
+  CheckSquare,
+  Square,
+  Zap,
+} from "lucide-react";
 import { Asset } from "../../api/types";
 import { useStore } from "../../store/useStore";
-import { useDeleteAsset } from "../../hooks/useAssets";
+import { useDeleteAsset, useCompressAsset } from "../../hooks/useAssets";
 import { formatBytes } from "../../utils/fileHelpers";
 import { formatDate } from "../../utils/dateHelpers";
 import { toast } from "sonner";
@@ -14,6 +24,7 @@ const IconMap = {
   audio: Music,
   document: FileText,
   other: File,
+  code: FileText,
 };
 
 const ColorMap = {
@@ -22,20 +33,44 @@ const ColorMap = {
   audio: "text-cyan-500 bg-cyan-500/10",
   document: "text-blue-500 bg-blue-500/10",
   other: "text-gray-500 bg-gray-500/10",
+  code: "text-green-500 bg-green-500/10",
 };
 
 export const AssetItem = memo(({ asset }: { asset: Asset }) => {
-  const { selectedAssetId, selectAsset } = useStore();
+  const {
+    selectedAssetId,
+    selectAsset,
+    isSelectionMode,
+    selectedAssetIds,
+    toggleAssetSelection,
+    toggleSelectionMode,
+  } = useStore();
   const { mutate: deleteAsset } = useDeleteAsset();
+  const { mutate: compressAsset } = useCompressAsset();
 
   const isSelected = selectedAssetId === asset.id;
+  const isChecked = selectedAssetIds.includes(asset.id);
   const Icon = IconMap[asset.file_type] || File;
   const colorClass = ColorMap[asset.file_type] || ColorMap.other;
+  const canCompress =
+    (asset.file_type === "image" || asset.file_type === "video") &&
+    !asset.is_compressed;
 
   const handleClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    selectAsset(asset.id);
+
+    if (e.ctrlKey || e.metaKey) {
+      if (!isSelectionMode) toggleSelectionMode();
+      toggleAssetSelection(asset.id);
+      return;
+    }
+
+    if (isSelectionMode) {
+      toggleAssetSelection(asset.id);
+    } else {
+      selectAsset(asset.id);
+    }
   };
 
   const handleDelete = (e: React.MouseEvent) => {
@@ -56,35 +91,44 @@ export const AssetItem = memo(({ asset }: { asset: Asset }) => {
     }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" || e.key === " ") {
-      e.preventDefault();
-      selectAsset(asset.id);
-    }
+  const handleCompress = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    compressAsset(asset.id);
   };
 
   return (
     <div
       id={`asset-${asset.id}`}
       onClick={handleClick}
-      onKeyDown={handleKeyDown}
       role="listitem"
       tabIndex={0}
       className={clsx(
         "group relative p-3 cursor-pointer border outline-none transition-all duration-200",
-        isSelected
+        isSelected && !isSelectionMode
           ? "bg-primary-light border-primary/30 shadow-sm"
           : "bg-transparent border-transparent hover:bg-surface hover:shadow-md hover:border-border/50",
+        isChecked && isSelectionMode && "bg-primary/10 border-primary/30",
       )}
     >
-      {isSelected && (
+      {isSelected && !isSelectionMode && (
         <div className="absolute left-0 top-3 bottom-3 w-1 bg-primary rounded-r-full" />
       )}
 
       <div className="flex items-center gap-4 pointer-events-none">
+        {isSelectionMode && (
+          <div className="pointer-events-auto text-primary">
+            {isChecked ? (
+              <CheckSquare size={20} />
+            ) : (
+              <Square size={20} className="text-text-muted" />
+            )}
+          </div>
+        )}
+
         <div
           className={clsx(
-            "w-12 h-12 flex-none overflow-hidden flex items-center justify-center",
+            "w-12 h-12 flex-none overflow-hidden flex items-center justify-center relative",
             asset.file_type === "image" ? "bg-surface-highlight" : colorClass,
           )}
         >
@@ -98,29 +142,72 @@ export const AssetItem = memo(({ asset }: { asset: Asset }) => {
           ) : (
             <Icon className="w-6 h-6" />
           )}
+          {asset.is_compressed && (
+            <div className="absolute bottom-0 right-0 bg-green-500 text-white text-[8px] px-1 font-bold">
+              ZIP
+            </div>
+          )}
         </div>
 
         <div className="flex-1 min-w-0">
           <h3 className="text-sm font-medium truncate text-primary">
             {asset.original_filename}
           </h3>
-          <div className="flex items-center gap-2 text-xs text-text-secondary mt-1">
-            <span className="capitalize">{asset.file_type}</span>
-            <span className="w-1 h-1 rounded-full bg-text-muted/50" />
-            <span className="font-mono">
-              {formatBytes(asset.file_size_bytes)}
-            </span>
+          <div className="flex flex-col gap-1 mt-1">
+            <div className="flex items-center gap-2 text-xs text-text-secondary">
+              <span className="capitalize">{asset.file_type}</span>
+              <span className="w-1 h-1 rounded-full bg-text-muted/50" />
+              <span className="font-mono">
+                {formatBytes(asset.file_size_bytes)}
+              </span>
+            </div>
+
+            {asset.tags.length > 0 && (
+              <div className="flex flex-wrap gap-1">
+                {asset.tags.slice(0, 3).map((t) => (
+                  <span
+                    key={t.id}
+                    className="px-1.5 py-0.5 rounded text-[9px] font-medium border border-transparent"
+                    style={{
+                      backgroundColor: `${t.color}15`,
+                      color: t.color,
+                    }}
+                  >
+                    {t.name}
+                  </span>
+                ))}
+                {asset.tags.length > 3 && (
+                  <span className="px-1.5 py-0.5 bg-surface-highlight rounded text-[9px] text-text-muted">
+                    +{asset.tags.length - 3}
+                  </span>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
-        <button
-          onClick={handleDelete}
-          className="pointer-events-auto p-2 text-text-muted hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-opacity opacity-0 group-hover:opacity-100 cursor-pointer"
-        >
-          <Trash2 size={16} />
-        </button>
+        {!isSelectionMode && (
+          <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
+            {canCompress && (
+              <button
+                onClick={handleCompress}
+                className="pointer-events-auto p-2 text-text-muted hover:text-primary hover:bg-primary/10 transition-colors cursor-pointer"
+                title="Compress"
+              >
+                <Zap size={16} />
+              </button>
+            )}
+            <button
+              onClick={handleDelete}
+              className="pointer-events-auto p-2 text-text-muted hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors cursor-pointer"
+              title="Delete"
+            >
+              <Trash2 size={16} />
+            </button>
+          </div>
+        )}
 
-        <div className="text-[10px] text-text-muted hidden sm:block">
+        <div className="text-[10px] text-text-muted hidden sm:block self-start mt-1">
           {formatDate(asset.created_at)}
         </div>
       </div>

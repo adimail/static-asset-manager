@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/adimail/asset-manager/ent/predicate"
 )
 
@@ -69,6 +70,11 @@ func OriginalFilename(v string) predicate.Asset {
 	return predicate.Asset(sql.FieldEQ(FieldOriginalFilename, v))
 }
 
+// FileType applies equality check predicate on the "file_type" field. It's identical to FileTypeEQ.
+func FileType(v string) predicate.Asset {
+	return predicate.Asset(sql.FieldEQ(FieldFileType, v))
+}
+
 // Extension applies equality check predicate on the "extension" field. It's identical to ExtensionEQ.
 func Extension(v string) predicate.Asset {
 	return predicate.Asset(sql.FieldEQ(FieldExtension, v))
@@ -87,6 +93,21 @@ func StoragePath(v string) predicate.Asset {
 // CreatedAt applies equality check predicate on the "created_at" field. It's identical to CreatedAtEQ.
 func CreatedAt(v time.Time) predicate.Asset {
 	return predicate.Asset(sql.FieldEQ(FieldCreatedAt, v))
+}
+
+// IsCompressed applies equality check predicate on the "is_compressed" field. It's identical to IsCompressedEQ.
+func IsCompressed(v bool) predicate.Asset {
+	return predicate.Asset(sql.FieldEQ(FieldIsCompressed, v))
+}
+
+// OriginalPath applies equality check predicate on the "original_path" field. It's identical to OriginalPathEQ.
+func OriginalPath(v string) predicate.Asset {
+	return predicate.Asset(sql.FieldEQ(FieldOriginalPath, v))
+}
+
+// CompressionRatio applies equality check predicate on the "compression_ratio" field. It's identical to CompressionRatioEQ.
+func CompressionRatio(v float64) predicate.Asset {
+	return predicate.Asset(sql.FieldEQ(FieldCompressionRatio, v))
 }
 
 // OriginalFilenameEQ applies the EQ predicate on the "original_filename" field.
@@ -155,23 +176,68 @@ func OriginalFilenameContainsFold(v string) predicate.Asset {
 }
 
 // FileTypeEQ applies the EQ predicate on the "file_type" field.
-func FileTypeEQ(v FileType) predicate.Asset {
+func FileTypeEQ(v string) predicate.Asset {
 	return predicate.Asset(sql.FieldEQ(FieldFileType, v))
 }
 
 // FileTypeNEQ applies the NEQ predicate on the "file_type" field.
-func FileTypeNEQ(v FileType) predicate.Asset {
+func FileTypeNEQ(v string) predicate.Asset {
 	return predicate.Asset(sql.FieldNEQ(FieldFileType, v))
 }
 
 // FileTypeIn applies the In predicate on the "file_type" field.
-func FileTypeIn(vs ...FileType) predicate.Asset {
+func FileTypeIn(vs ...string) predicate.Asset {
 	return predicate.Asset(sql.FieldIn(FieldFileType, vs...))
 }
 
 // FileTypeNotIn applies the NotIn predicate on the "file_type" field.
-func FileTypeNotIn(vs ...FileType) predicate.Asset {
+func FileTypeNotIn(vs ...string) predicate.Asset {
 	return predicate.Asset(sql.FieldNotIn(FieldFileType, vs...))
+}
+
+// FileTypeGT applies the GT predicate on the "file_type" field.
+func FileTypeGT(v string) predicate.Asset {
+	return predicate.Asset(sql.FieldGT(FieldFileType, v))
+}
+
+// FileTypeGTE applies the GTE predicate on the "file_type" field.
+func FileTypeGTE(v string) predicate.Asset {
+	return predicate.Asset(sql.FieldGTE(FieldFileType, v))
+}
+
+// FileTypeLT applies the LT predicate on the "file_type" field.
+func FileTypeLT(v string) predicate.Asset {
+	return predicate.Asset(sql.FieldLT(FieldFileType, v))
+}
+
+// FileTypeLTE applies the LTE predicate on the "file_type" field.
+func FileTypeLTE(v string) predicate.Asset {
+	return predicate.Asset(sql.FieldLTE(FieldFileType, v))
+}
+
+// FileTypeContains applies the Contains predicate on the "file_type" field.
+func FileTypeContains(v string) predicate.Asset {
+	return predicate.Asset(sql.FieldContains(FieldFileType, v))
+}
+
+// FileTypeHasPrefix applies the HasPrefix predicate on the "file_type" field.
+func FileTypeHasPrefix(v string) predicate.Asset {
+	return predicate.Asset(sql.FieldHasPrefix(FieldFileType, v))
+}
+
+// FileTypeHasSuffix applies the HasSuffix predicate on the "file_type" field.
+func FileTypeHasSuffix(v string) predicate.Asset {
+	return predicate.Asset(sql.FieldHasSuffix(FieldFileType, v))
+}
+
+// FileTypeEqualFold applies the EqualFold predicate on the "file_type" field.
+func FileTypeEqualFold(v string) predicate.Asset {
+	return predicate.Asset(sql.FieldEqualFold(FieldFileType, v))
+}
+
+// FileTypeContainsFold applies the ContainsFold predicate on the "file_type" field.
+func FileTypeContainsFold(v string) predicate.Asset {
+	return predicate.Asset(sql.FieldContainsFold(FieldFileType, v))
 }
 
 // ExtensionEQ applies the EQ predicate on the "extension" field.
@@ -382,6 +448,187 @@ func CreatedAtLT(v time.Time) predicate.Asset {
 // CreatedAtLTE applies the LTE predicate on the "created_at" field.
 func CreatedAtLTE(v time.Time) predicate.Asset {
 	return predicate.Asset(sql.FieldLTE(FieldCreatedAt, v))
+}
+
+// IsCompressedEQ applies the EQ predicate on the "is_compressed" field.
+func IsCompressedEQ(v bool) predicate.Asset {
+	return predicate.Asset(sql.FieldEQ(FieldIsCompressed, v))
+}
+
+// IsCompressedNEQ applies the NEQ predicate on the "is_compressed" field.
+func IsCompressedNEQ(v bool) predicate.Asset {
+	return predicate.Asset(sql.FieldNEQ(FieldIsCompressed, v))
+}
+
+// OriginalPathEQ applies the EQ predicate on the "original_path" field.
+func OriginalPathEQ(v string) predicate.Asset {
+	return predicate.Asset(sql.FieldEQ(FieldOriginalPath, v))
+}
+
+// OriginalPathNEQ applies the NEQ predicate on the "original_path" field.
+func OriginalPathNEQ(v string) predicate.Asset {
+	return predicate.Asset(sql.FieldNEQ(FieldOriginalPath, v))
+}
+
+// OriginalPathIn applies the In predicate on the "original_path" field.
+func OriginalPathIn(vs ...string) predicate.Asset {
+	return predicate.Asset(sql.FieldIn(FieldOriginalPath, vs...))
+}
+
+// OriginalPathNotIn applies the NotIn predicate on the "original_path" field.
+func OriginalPathNotIn(vs ...string) predicate.Asset {
+	return predicate.Asset(sql.FieldNotIn(FieldOriginalPath, vs...))
+}
+
+// OriginalPathGT applies the GT predicate on the "original_path" field.
+func OriginalPathGT(v string) predicate.Asset {
+	return predicate.Asset(sql.FieldGT(FieldOriginalPath, v))
+}
+
+// OriginalPathGTE applies the GTE predicate on the "original_path" field.
+func OriginalPathGTE(v string) predicate.Asset {
+	return predicate.Asset(sql.FieldGTE(FieldOriginalPath, v))
+}
+
+// OriginalPathLT applies the LT predicate on the "original_path" field.
+func OriginalPathLT(v string) predicate.Asset {
+	return predicate.Asset(sql.FieldLT(FieldOriginalPath, v))
+}
+
+// OriginalPathLTE applies the LTE predicate on the "original_path" field.
+func OriginalPathLTE(v string) predicate.Asset {
+	return predicate.Asset(sql.FieldLTE(FieldOriginalPath, v))
+}
+
+// OriginalPathContains applies the Contains predicate on the "original_path" field.
+func OriginalPathContains(v string) predicate.Asset {
+	return predicate.Asset(sql.FieldContains(FieldOriginalPath, v))
+}
+
+// OriginalPathHasPrefix applies the HasPrefix predicate on the "original_path" field.
+func OriginalPathHasPrefix(v string) predicate.Asset {
+	return predicate.Asset(sql.FieldHasPrefix(FieldOriginalPath, v))
+}
+
+// OriginalPathHasSuffix applies the HasSuffix predicate on the "original_path" field.
+func OriginalPathHasSuffix(v string) predicate.Asset {
+	return predicate.Asset(sql.FieldHasSuffix(FieldOriginalPath, v))
+}
+
+// OriginalPathIsNil applies the IsNil predicate on the "original_path" field.
+func OriginalPathIsNil() predicate.Asset {
+	return predicate.Asset(sql.FieldIsNull(FieldOriginalPath))
+}
+
+// OriginalPathNotNil applies the NotNil predicate on the "original_path" field.
+func OriginalPathNotNil() predicate.Asset {
+	return predicate.Asset(sql.FieldNotNull(FieldOriginalPath))
+}
+
+// OriginalPathEqualFold applies the EqualFold predicate on the "original_path" field.
+func OriginalPathEqualFold(v string) predicate.Asset {
+	return predicate.Asset(sql.FieldEqualFold(FieldOriginalPath, v))
+}
+
+// OriginalPathContainsFold applies the ContainsFold predicate on the "original_path" field.
+func OriginalPathContainsFold(v string) predicate.Asset {
+	return predicate.Asset(sql.FieldContainsFold(FieldOriginalPath, v))
+}
+
+// CompressionRatioEQ applies the EQ predicate on the "compression_ratio" field.
+func CompressionRatioEQ(v float64) predicate.Asset {
+	return predicate.Asset(sql.FieldEQ(FieldCompressionRatio, v))
+}
+
+// CompressionRatioNEQ applies the NEQ predicate on the "compression_ratio" field.
+func CompressionRatioNEQ(v float64) predicate.Asset {
+	return predicate.Asset(sql.FieldNEQ(FieldCompressionRatio, v))
+}
+
+// CompressionRatioIn applies the In predicate on the "compression_ratio" field.
+func CompressionRatioIn(vs ...float64) predicate.Asset {
+	return predicate.Asset(sql.FieldIn(FieldCompressionRatio, vs...))
+}
+
+// CompressionRatioNotIn applies the NotIn predicate on the "compression_ratio" field.
+func CompressionRatioNotIn(vs ...float64) predicate.Asset {
+	return predicate.Asset(sql.FieldNotIn(FieldCompressionRatio, vs...))
+}
+
+// CompressionRatioGT applies the GT predicate on the "compression_ratio" field.
+func CompressionRatioGT(v float64) predicate.Asset {
+	return predicate.Asset(sql.FieldGT(FieldCompressionRatio, v))
+}
+
+// CompressionRatioGTE applies the GTE predicate on the "compression_ratio" field.
+func CompressionRatioGTE(v float64) predicate.Asset {
+	return predicate.Asset(sql.FieldGTE(FieldCompressionRatio, v))
+}
+
+// CompressionRatioLT applies the LT predicate on the "compression_ratio" field.
+func CompressionRatioLT(v float64) predicate.Asset {
+	return predicate.Asset(sql.FieldLT(FieldCompressionRatio, v))
+}
+
+// CompressionRatioLTE applies the LTE predicate on the "compression_ratio" field.
+func CompressionRatioLTE(v float64) predicate.Asset {
+	return predicate.Asset(sql.FieldLTE(FieldCompressionRatio, v))
+}
+
+// CompressionRatioIsNil applies the IsNil predicate on the "compression_ratio" field.
+func CompressionRatioIsNil() predicate.Asset {
+	return predicate.Asset(sql.FieldIsNull(FieldCompressionRatio))
+}
+
+// CompressionRatioNotNil applies the NotNil predicate on the "compression_ratio" field.
+func CompressionRatioNotNil() predicate.Asset {
+	return predicate.Asset(sql.FieldNotNull(FieldCompressionRatio))
+}
+
+// HasTags applies the HasEdge predicate on the "tags" edge.
+func HasTags() predicate.Asset {
+	return predicate.Asset(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, TagsTable, TagsPrimaryKey...),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasTagsWith applies the HasEdge predicate on the "tags" edge with a given conditions (other predicates).
+func HasTagsWith(preds ...predicate.Tag) predicate.Asset {
+	return predicate.Asset(func(s *sql.Selector) {
+		step := newTagsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasCompressionJobs applies the HasEdge predicate on the "compression_jobs" edge.
+func HasCompressionJobs() predicate.Asset {
+	return predicate.Asset(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, CompressionJobsTable, CompressionJobsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasCompressionJobsWith applies the HasEdge predicate on the "compression_jobs" edge with a given conditions (other predicates).
+func HasCompressionJobsWith(preds ...predicate.CompressionJob) predicate.Asset {
+	return predicate.Asset(func(s *sql.Selector) {
+		step := newCompressionJobsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
 }
 
 // And groups predicates with the AND operator between them.

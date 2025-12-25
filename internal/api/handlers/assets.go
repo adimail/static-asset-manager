@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/adimail/asset-manager/internal/assets"
 	"github.com/gorilla/mux"
@@ -45,7 +46,12 @@ func (h *AssetHandler) List(w http.ResponseWriter, r *http.Request) {
 	page, _ := strconv.Atoi(r.URL.Query().Get("page"))
 	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
 
-	res, err := h.service.List(r.Context(), page, limit)
+	var tags []string
+	if t := r.URL.Query().Get("tags"); t != "" {
+		tags = strings.Split(t, ",")
+	}
+
+	res, err := h.service.List(r.Context(), page, limit, tags)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -63,6 +69,47 @@ func (h *AssetHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+func (h *AssetHandler) BulkDelete(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		IDs []string `json:"ids"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	if err := h.service.DeleteMultiple(r.Context(), req.IDs); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *AssetHandler) Compress(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	if err := h.service.CompressAsset(r.Context(), vars["id"]); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusAccepted)
+}
+
+func (h *AssetHandler) BulkCompress(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		IDs []string `json:"ids"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	if err := h.service.CompressMultiple(r.Context(), req.IDs); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusAccepted)
+}
+
 func (h *AssetHandler) Download(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	asset, err := h.service.Get(r.Context(), vars["id"])
@@ -71,7 +118,6 @@ func (h *AssetHandler) Download(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Reconstruct the absolute path before serving
 	fullPath := h.service.GetFullStoragePath(asset)
 	http.ServeFile(w, r, fullPath)
 }

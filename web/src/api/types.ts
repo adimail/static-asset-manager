@@ -6,6 +6,12 @@ export type FileType =
   | "code"
   | "other";
 
+export interface Tag {
+  id: string;
+  name: string;
+  color: string;
+}
+
 export interface Asset {
   id: string;
   original_filename: string;
@@ -13,6 +19,9 @@ export interface Asset {
   extension: string;
   file_size_bytes: number;
   created_at: string;
+  is_compressed: boolean;
+  compression_ratio?: number;
+  tags: Tag[];
 }
 
 export interface Assets {

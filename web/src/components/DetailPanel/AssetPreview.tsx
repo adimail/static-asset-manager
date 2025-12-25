@@ -8,18 +8,26 @@ import {
   FileText,
   Download,
   Music,
+  Zap,
+  Tag as TagIcon,
 } from "lucide-react";
 import { Asset } from "../../api/types";
 import { useStore } from "../../store/useStore";
-import { useDeleteAsset } from "../../hooks/useAssets";
+import { useDeleteAsset, useCompressAsset } from "../../hooks/useAssets";
 import { formatBytes } from "../../utils/fileHelpers";
 import { formatDate } from "../../utils/dateHelpers";
 import { toast } from "sonner";
 import { api } from "../../api/client";
 
 export function AssetPreview({ asset }: { asset: Asset }) {
-  const { selectAsset, setShowDeleteConfirm, showDeleteConfirm } = useStore();
+  const {
+    selectAsset,
+    setShowDeleteConfirm,
+    showDeleteConfirm,
+    setTagModalOpen,
+  } = useStore();
   const { mutate: deleteAsset } = useDeleteAsset();
+  const { mutate: compressAsset } = useCompressAsset();
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [textContent, setTextContent] = useState<string | null>(null);
   const [isLoadingText, setIsLoadingText] = useState(false);
@@ -53,6 +61,10 @@ export function AssetPreview({ asset }: { asset: Asset }) {
 
   const apiPath = `/assets/${asset.id}/download`;
   const publicUrl = `/api/v1${apiPath}`;
+
+  const canCompress =
+    (asset.file_type === "image" || asset.file_type === "video") &&
+    !asset.is_compressed;
 
   useEffect(() => {
     if (isPreviewableText) {
@@ -99,6 +111,10 @@ export function AssetPreview({ asset }: { asset: Asset }) {
         toast.error("Failed to delete file");
       },
     });
+  };
+
+  const handleCompress = () => {
+    compressAsset(asset.id);
   };
 
   const copyToClipboard = (text: string, field: string) => {
@@ -154,6 +170,22 @@ export function AssetPreview({ asset }: { asset: Asset }) {
               </div>
             </div>
             <div className="flex items-center gap-2">
+              <button
+                onClick={() => setTagModalOpen(true)}
+                className="p-2 text-text-secondary hover:text-primary hover:bg-primary/10 transition-colors cursor-pointer"
+                title="Add Tags"
+              >
+                <TagIcon size={18} />
+              </button>
+              {canCompress && (
+                <button
+                  onClick={handleCompress}
+                  className="p-2 text-text-secondary hover:text-primary hover:bg-primary/10 transition-colors cursor-pointer"
+                  title="Compress"
+                >
+                  <Zap size={18} />
+                </button>
+              )}
               <a
                 href={publicUrl}
                 download
@@ -300,7 +332,34 @@ export function AssetPreview({ asset }: { asset: Asset }) {
             <span className="font-bold uppercase mr-2">Date:</span>{" "}
             {formatDate(asset.created_at)}
           </div>
+          {asset.is_compressed && (
+            <div>
+              <span className="font-bold uppercase mr-2 text-green-600">
+                Compressed
+              </span>
+              {asset.compression_ratio && (
+                <span>({(asset.compression_ratio * 100).toFixed(0)}%)</span>
+              )}
+            </div>
+          )}
         </div>
+        {asset.tags.length > 0 && (
+          <div className="mt-4 flex flex-wrap gap-2">
+            {asset.tags.map((tag) => (
+              <span
+                key={tag.id}
+                className="px-2 py-1 rounded-full text-xs font-medium border border-border"
+                style={{
+                  backgroundColor: `${tag.color}20`,
+                  color: tag.color,
+                  borderColor: `${tag.color}40`,
+                }}
+              >
+                {tag.name}
+              </span>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

@@ -13,6 +13,8 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/adimail/asset-manager/ent/asset"
+	"github.com/adimail/asset-manager/ent/compressionjob"
+	"github.com/adimail/asset-manager/ent/tag"
 )
 
 // ent aliases to avoid import conflicts in user's code.
@@ -73,7 +75,9 @@ var (
 func checkColumn(t, c string) error {
 	initCheck.Do(func() {
 		columnCheck = sql.NewColumnCheck(map[string]func(string) bool{
-			asset.Table: asset.ValidColumn,
+			asset.Table:          asset.ValidColumn,
+			compressionjob.Table: compressionjob.ValidColumn,
+			tag.Table:            tag.ValidColumn,
 		})
 	})
 	return columnCheck(t, c)

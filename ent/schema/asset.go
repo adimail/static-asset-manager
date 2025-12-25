@@ -4,8 +4,10 @@ import (
 	"time"
 
 	"entgo.io/ent"
+	"entgo.io/ent/dialect/entsql"
+	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
-	"entgo.io/ent/schema/index"
+	"github.com/google/uuid"
 )
 
 type Asset struct {
@@ -14,26 +16,24 @@ type Asset struct {
 
 func (Asset) Fields() []ent.Field {
 	return []ent.Field{
-		field.String("id").
-			StorageKey("id").
-			Immutable(),
-		field.String("original_filename").
-			NotEmpty(),
-		field.Enum("file_type").
-			Values("image", "document", "audio", "video", "other"),
+		field.String("id").DefaultFunc(uuid.NewString),
+		field.String("original_filename"),
+		field.String("file_type"),
 		field.String("extension"),
-		field.Int64("file_size_bytes").
-			Positive(),
+		field.Int64("file_size_bytes"),
 		field.String("storage_path"),
-		field.Time("created_at").
-			Default(time.Now).
-			Immutable(),
+		field.Time("created_at").Default(time.Now),
+
+		// Compression fields
+		field.Bool("is_compressed").Default(false),
+		field.String("original_path").Optional(),
+		field.Float("compression_ratio").Optional(),
 	}
 }
 
-func (Asset) Indexes() []ent.Index {
-	return []ent.Index{
-		index.Fields("created_at"),
-		index.Fields("file_type"),
+func (Asset) Edges() []ent.Edge {
+	return []ent.Edge{
+		edge.To("tags", Tag.Type),
+		edge.To("compression_jobs", CompressionJob.Type).Annotations(entsql.OnDelete(entsql.Cascade)),
 	}
 }

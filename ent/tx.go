@@ -14,6 +14,10 @@ type Tx struct {
 	config
 	// Asset is the client for interacting with the Asset builders.
 	Asset *AssetClient
+	// CompressionJob is the client for interacting with the CompressionJob builders.
+	CompressionJob *CompressionJobClient
+	// Tag is the client for interacting with the Tag builders.
+	Tag *TagClient
 
 	// lazily loaded.
 	client     *Client
@@ -146,6 +150,8 @@ func (tx *Tx) Client() *Client {
 
 func (tx *Tx) init() {
 	tx.Asset = NewAssetClient(tx.config)
+	tx.CompressionJob = NewCompressionJobClient(tx.config)
+	tx.Tag = NewTagClient(tx.config)
 }
 
 // txDriver wraps the given dialect.Tx with a nop dialect.Driver implementation.

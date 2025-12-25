@@ -6,7 +6,9 @@ import (
 	"time"
 
 	"github.com/adimail/asset-manager/ent/asset"
+	"github.com/adimail/asset-manager/ent/compressionjob"
 	"github.com/adimail/asset-manager/ent/schema"
+	"github.com/adimail/asset-manager/ent/tag"
 )
 
 // The init function reads all schema descriptors with runtime code
@@ -15,16 +17,48 @@ import (
 func init() {
 	assetFields := schema.Asset{}.Fields()
 	_ = assetFields
-	// assetDescOriginalFilename is the schema descriptor for original_filename field.
-	assetDescOriginalFilename := assetFields[1].Descriptor()
-	// asset.OriginalFilenameValidator is a validator for the "original_filename" field. It is called by the builders before save.
-	asset.OriginalFilenameValidator = assetDescOriginalFilename.Validators[0].(func(string) error)
-	// assetDescFileSizeBytes is the schema descriptor for file_size_bytes field.
-	assetDescFileSizeBytes := assetFields[4].Descriptor()
-	// asset.FileSizeBytesValidator is a validator for the "file_size_bytes" field. It is called by the builders before save.
-	asset.FileSizeBytesValidator = assetDescFileSizeBytes.Validators[0].(func(int64) error)
 	// assetDescCreatedAt is the schema descriptor for created_at field.
 	assetDescCreatedAt := assetFields[6].Descriptor()
 	// asset.DefaultCreatedAt holds the default value on creation for the created_at field.
 	asset.DefaultCreatedAt = assetDescCreatedAt.Default.(func() time.Time)
+	// assetDescIsCompressed is the schema descriptor for is_compressed field.
+	assetDescIsCompressed := assetFields[7].Descriptor()
+	// asset.DefaultIsCompressed holds the default value on creation for the is_compressed field.
+	asset.DefaultIsCompressed = assetDescIsCompressed.Default.(bool)
+	// assetDescID is the schema descriptor for id field.
+	assetDescID := assetFields[0].Descriptor()
+	// asset.DefaultID holds the default value on creation for the id field.
+	asset.DefaultID = assetDescID.Default.(func() string)
+	compressionjobFields := schema.CompressionJob{}.Fields()
+	_ = compressionjobFields
+	// compressionjobDescStatus is the schema descriptor for status field.
+	compressionjobDescStatus := compressionjobFields[1].Descriptor()
+	// compressionjob.DefaultStatus holds the default value on creation for the status field.
+	compressionjob.DefaultStatus = compressionjobDescStatus.Default.(string)
+	// compressionjobDescProgress is the schema descriptor for progress field.
+	compressionjobDescProgress := compressionjobFields[2].Descriptor()
+	// compressionjob.DefaultProgress holds the default value on creation for the progress field.
+	compressionjob.DefaultProgress = compressionjobDescProgress.Default.(int)
+	// compressionjobDescID is the schema descriptor for id field.
+	compressionjobDescID := compressionjobFields[0].Descriptor()
+	// compressionjob.DefaultID holds the default value on creation for the id field.
+	compressionjob.DefaultID = compressionjobDescID.Default.(func() string)
+	tagFields := schema.Tag{}.Fields()
+	_ = tagFields
+	// tagDescName is the schema descriptor for name field.
+	tagDescName := tagFields[1].Descriptor()
+	// tag.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	tag.NameValidator = tagDescName.Validators[0].(func(string) error)
+	// tagDescColor is the schema descriptor for color field.
+	tagDescColor := tagFields[2].Descriptor()
+	// tag.DefaultColor holds the default value on creation for the color field.
+	tag.DefaultColor = tagDescColor.Default.(string)
+	// tagDescCreatedAt is the schema descriptor for created_at field.
+	tagDescCreatedAt := tagFields[3].Descriptor()
+	// tag.DefaultCreatedAt holds the default value on creation for the created_at field.
+	tag.DefaultCreatedAt = tagDescCreatedAt.Default.(func() time.Time)
+	// tagDescID is the schema descriptor for id field.
+	tagDescID := tagFields[0].Descriptor()
+	// tag.DefaultID holds the default value on creation for the id field.
+	tag.DefaultID = tagDescID.Default.(func() string)
 }
