@@ -27,6 +27,11 @@ export function MainLayout() {
     if (isResizing) {
       window.addEventListener("mousemove", resize);
       window.addEventListener("mouseup", stopResizing);
+      document.body.style.cursor = "col-resize";
+      document.body.style.userSelect = "none";
+    } else {
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
     }
     return () => {
       window.removeEventListener("mousemove", resize);
@@ -36,9 +41,10 @@ export function MainLayout() {
 
   return (
     <div ref={containerRef} className="flex-1 flex overflow-hidden relative">
+      {/* Master Panel */}
       <div
         className={clsx(
-          "flex flex-col bg-bg border-r border-border transition-all duration-200",
+          "flex flex-col bg-bg border-r border-border", // Removed transition-all duration-200
           "w-full md:w-auto absolute md:relative inset-0 md:inset-auto z-10 md:z-0",
           selectedAssetId ? "hidden md:flex" : "flex",
         )}
@@ -49,14 +55,16 @@ export function MainLayout() {
         <MasterPanel />
       </div>
 
+      {/* Resize Handle */}
       <div
-        className="hidden md:block w-[3px] hover:w-[4px] bg-border hover:bg-primary cursor-col-resize transition-all z-20 flex-none"
+        className="hidden md:block w-[3px] hover:w-[4px] bg-border hover:bg-primary cursor-col-resize z-20 flex-none" // Removed transition-all
         onMouseDown={startResizing}
       />
 
+      {/* Detail/Preview Panel */}
       <div
         className={clsx(
-          "flex-1 flex flex-col bg-surface transition-all duration-200",
+          "flex-1 flex flex-col bg-surface", // Removed transition-all duration-200
           "w-full md:w-auto absolute md:relative inset-0 md:inset-auto z-20 md:z-0",
           selectedAssetId ? "flex" : "hidden md:flex",
         )}

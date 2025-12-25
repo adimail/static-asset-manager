@@ -52,35 +52,33 @@
 }
 
 :root {
-  /* Light Mode – Warm / Soft */
-  --color-bg: #fff7cc; /* pale cream */
+  --color-bg: #fff7cc;
   --color-sidebar: #ffffff;
   --color-surface: #fffdf2;
-  --color-surface-highlight: #f3d27a; /* soft yellow */
+  --color-surface-highlight: #f3d27a;
   --color-border: rgba(180, 120, 60, 0.25);
 
-  --color-primary: #d98b45; /* warm orange */
+  --color-primary: #d98b45;
   --color-primary-hover: #c77734;
   --color-primary-light: rgba(217, 139, 69, 0.18);
 
-  --color-text-primary: #6b3f1d; /* deep warm brown */
+  --color-text-primary: #6b3f1d;
   --color-text-secondary: #9a6a3a;
   --color-text-muted: #c59a6a;
 }
 
 .dark {
-  /* Dark Mode – Blue Slate */
-  --color-bg: #23394d; /* darkest top blue */
+  --color-bg: #23394d;
   --color-sidebar: #2f4a63;
   --color-surface: #2f4a63;
-  --color-surface-highlight: #4f667f; /* mid slate blue */
+  --color-surface-highlight: #4f667f;
   --color-border: rgba(255, 255, 255, 0.14);
 
-  --color-primary: #3b5f82; /* muted steel blue */
+  --color-primary: #dae1e9;
   --color-primary-hover: #4a7399;
   --color-primary-light: rgba(59, 95, 130, 0.25);
 
-  --color-text-primary: #cdcdcd; /* light gray */
+  --color-text-primary: #f1f1f1;
   --color-text-secondary: #c4ccd3;
   --color-text-muted: #9aa6b2;
 }

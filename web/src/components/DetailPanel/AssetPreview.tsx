@@ -119,7 +119,7 @@ export function AssetPreview({ asset }: { asset: Asset }) {
 
       {/* Preview Area */}
       <div className="flex-1 overflow-auto p-4 md:p-8 flex items-center justify-center bg-surface-highlight/30">
-        <div className="relative w-full h-full max-w-4xl max-h-[800px] flex items-center justify-center bg-surface  shadow-sm border border-border overflow-hidden">
+        <div className="relative w-full h-full max-w-4xl max-h-[800px] flex items-center justify-center overflow-hidden">
           {asset.file_type === "image" ? (
             <img
               src={downloadUrl}
@@ -133,11 +133,11 @@ export function AssetPreview({ asset }: { asset: Asset }) {
               className="max-w-full max-h-full bg-black w-full h-full"
             />
           ) : asset.file_type === "audio" ? (
-            <div className="w-full max-w-md p-8 flex flex-col items-center">
+            <div className="w-full max-w-xl p-8 flex flex-col items-center">
               <div className="w-32 h-32 bg-gradient-to-br from-cyan-400 to-blue-500 rounded-full flex items-center justify-center shadow-lg mb-8 animate-pulse-slow">
                 <span className="text-5xl">🎵</span>
               </div>
-              <h3 className="text-center font-medium mb-6 truncate w-full text-lg">
+              <h3 className="text-center font-medium mb-6 truncate w-full text-lg text-primary">
                 {asset.original_filename}
               </h3>
               <audio src={downloadUrl} controls className="w-full" />
