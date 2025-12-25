@@ -3,6 +3,7 @@ import { useDropzone } from "react-dropzone";
 import { UploadCloud, X, CheckCircle, AlertCircle } from "lucide-react";
 import { useStore } from "../../store/useStore";
 import { useUpload } from "../../hooks/useUpload";
+import { toast } from "sonner";
 import clsx from "clsx";
 
 export function UploadInterface() {
@@ -42,12 +43,14 @@ export function UploadInterface() {
                 : u,
             ),
           );
+          toast.success(`Uploaded ${item.file.name}`);
         } catch (e) {
           setUploads((prev) =>
             prev.map((u) =>
               u.file === item.file ? { ...u, status: "error", progress: 0 } : u,
             ),
           );
+          toast.error(`Failed to upload ${item.file.name}`);
         }
       });
     },
@@ -59,11 +62,16 @@ export function UploadInterface() {
   const hasActiveUploads = uploads.length > 0;
 
   return (
-    <div className="h-full flex flex-col p-8">
+    <div
+      className="h-full flex flex-col p-8"
+      role="dialog"
+      aria-label="Upload interface"
+    >
       <div className="flex justify-end mb-4">
         <button
           onClick={() => setUploadOpen(false)}
-          className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full"
+          className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-primary"
+          aria-label="Close upload interface"
         >
           <X size={24} />
         </button>
@@ -73,17 +81,19 @@ export function UploadInterface() {
         <div
           {...getRootProps()}
           className={clsx(
-            "flex-1 border-2 border-dashed rounded-xl flex flex-col items-center justify-center transition-all cursor-pointer",
+            "flex-1 border-2 border-dashed flex flex-col items-center justify-center transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary",
             isDragActive
               ? "border-primary bg-blue-50 dark:bg-blue-900/20 scale-[1.01]"
               : "border-gray-300 dark:border-gray-700 hover:border-primary hover:bg-gray-50 dark:hover:bg-gray-800/50",
           )}
+          role="button"
+          aria-label="Drag and drop area"
         >
           <input {...getInputProps()} />
           <UploadCloud size={64} className="text-gray-400 mb-6" />
           <h3 className="text-lg font-medium mb-2">Drag and drop files here</h3>
           <p className="text-gray-500 text-sm mb-6">or</p>
-          <button className="bg-primary hover:bg-primary-hover text-white px-6 py-3 rounded-lg font-medium transition-colors">
+          <button className="bg-primary hover:bg-primary-hover text-white px-6 py-3 font-medium transition-colors">
             Choose Files
           </button>
           <p className="mt-8 text-xs text-gray-400">
@@ -98,7 +108,11 @@ export function UploadInterface() {
           {uploads.map((upload, idx) => (
             <div
               key={idx}
-              className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-border"
+              className="bg-white dark:bg-gray-800 p-4 border border-border"
+              role="progressbar"
+              aria-valuenow={upload.progress}
+              aria-valuemin={0}
+              aria-valuemax={100}
             >
               <div className="flex justify-between mb-2">
                 <span className="font-medium truncate">{upload.file.name}</span>
@@ -116,7 +130,7 @@ export function UploadInterface() {
                   <span className="text-primary">{upload.progress}%</span>
                 )}
               </div>
-              <div className="h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+              <div className="h-2 bg-gray-100 dark:bg-gray-700 overflow-hidden">
                 <div
                   className={clsx(
                     "h-full transition-all duration-300",
@@ -140,7 +154,7 @@ export function UploadInterface() {
                   setUploads([]);
                   setUploadOpen(false);
                 }}
-                className="text-primary hover:underline"
+                className="text-primary hover:underline focus:outline-none focus:ring-2 focus:ring-primary"
               >
                 Done
               </button>

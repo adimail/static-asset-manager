@@ -23,17 +23,30 @@ export function AssetItem({ asset }: { asset: Asset }) {
     setUploadOpen(false);
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      handleClick();
+    }
+  };
+
   return (
     <div
+      id={`asset-${asset.id}`}
       onClick={handleClick}
+      onKeyDown={handleKeyDown}
+      role="listitem"
+      tabIndex={0}
+      aria-selected={isSelected}
+      aria-label={`${asset.original_filename}, ${asset.file_type}, ${formatBytes(asset.file_size_bytes)}`}
       className={clsx(
-        "h-20 p-3 rounded-lg cursor-pointer border-l-[3px] transition-all flex items-center gap-3 group",
+        "h-20 p-3 cursor-pointer border-l-[3px] transition-all flex items-center gap-3 group focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary",
         isSelected
           ? "bg-selected-bg border-selected-border"
           : "bg-surface border-transparent hover:bg-gray-100 dark:hover:bg-gray-800",
       )}
     >
-      <div className="w-14 h-14 flex-none rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
+      <div className="w-14 h-14 flex-none overflow-hidden bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
         {asset.file_type === "image" ? (
           <img
             src={`/api/v1/assets/${asset.id}/download`}

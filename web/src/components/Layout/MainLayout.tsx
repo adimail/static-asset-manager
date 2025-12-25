@@ -2,9 +2,10 @@ import { useState, useEffect, useRef } from "react";
 import { useStore } from "../../store/useStore";
 import { MasterPanel } from "../MasterPanel/MasterPanel";
 import { DetailPanel } from "../DetailPanel/DetailPanel";
+import clsx from "clsx";
 
 export function MainLayout() {
-  const { masterPanelWidth, setMasterPanelWidth } = useStore();
+  const { masterPanelWidth, setMasterPanelWidth, selectedAssetId } = useStore();
   const [isResizing, setIsResizing] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -36,18 +37,30 @@ export function MainLayout() {
   return (
     <div ref={containerRef} className="flex-1 flex overflow-hidden relative">
       <div
-        style={{ width: `${masterPanelWidth}%` }}
-        className="flex flex-col min-w-[400px]"
+        className={clsx(
+          "flex flex-col bg-bg border-r border-border transition-all duration-200",
+          "w-full md:w-auto absolute md:relative inset-0 md:inset-auto z-10 md:z-0",
+          selectedAssetId ? "hidden md:flex" : "flex",
+        )}
+        style={{
+          width: window.innerWidth >= 768 ? `${masterPanelWidth}%` : "100%",
+        }}
       >
         <MasterPanel />
       </div>
 
       <div
-        className="w-[3px] hover:w-[4px] bg-border hover:bg-primary cursor-col-resize transition-all z-20 flex-none"
+        className="hidden md:block w-[3px] hover:w-[4px] bg-border hover:bg-primary cursor-col-resize transition-all z-20 flex-none"
         onMouseDown={startResizing}
       />
 
-      <div className="flex-1 flex flex-col min-w-[600px] bg-surface">
+      <div
+        className={clsx(
+          "flex-1 flex flex-col bg-surface transition-all duration-200",
+          "w-full md:w-auto absolute md:relative inset-0 md:inset-auto z-20 md:z-0",
+          selectedAssetId ? "flex" : "hidden md:flex",
+        )}
+      >
         <DetailPanel />
       </div>
     </div>

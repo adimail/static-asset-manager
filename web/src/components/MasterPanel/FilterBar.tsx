@@ -13,12 +13,16 @@ export function FilterBar() {
   } = useStore();
 
   return (
-    <div className="p-4 border-b border-border bg-surface space-y-3 flex-none">
+    <div
+      className="p-4 border-b border-border bg-surface space-y-3 flex-none"
+      role="search"
+    >
       <div className="relative">
         <select
           value={filterType}
           onChange={(e) => setFilterType(e.target.value as FileType | "all")}
-          className="w-full h-10 pl-3 pr-8 bg-white dark:bg-gray-800 border border-border rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-transparent outline-none appearance-none"
+          className="w-full h-10 pl-3 pr-8 bg-white dark:bg-gray-800 border border-border text-sm focus:ring-2 focus:ring-primary focus:border-transparent outline-none appearance-none"
+          aria-label="Filter by file type"
         >
           <option value="all">All Types</option>
           <option value="image">Images</option>
@@ -42,12 +46,14 @@ export function FilterBar() {
           placeholder="Search files..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full h-10 pl-9 pr-8 bg-white dark:bg-gray-800 border border-border rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+          className="w-full h-10 pl-9 pr-8 bg-white dark:bg-gray-800 border border-border text-sm focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+          aria-label="Search files"
         />
         {searchQuery && (
           <button
             onClick={() => setSearchQuery("")}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none"
+            aria-label="Clear search"
           >
             <X size={14} />
           </button>
@@ -58,7 +64,8 @@ export function FilterBar() {
         <select
           value={sortOrder}
           onChange={(e) => setSortOrder(e.target.value as any)}
-          className="w-full h-10 pl-3 pr-8 bg-white dark:bg-gray-800 border border-border rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-transparent outline-none appearance-none"
+          className="w-full h-10 pl-3 pr-8 bg-white dark:bg-gray-800 border border-border text-sm focus:ring-2 focus:ring-primary focus:border-transparent outline-none appearance-none"
+          aria-label="Sort files"
         >
           <option value="newest">Sort: Newest First</option>
           <option value="oldest">Sort: Oldest First</option>

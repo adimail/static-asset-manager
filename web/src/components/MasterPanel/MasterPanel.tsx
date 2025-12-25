@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useEffect, useRef } from "react";
 import { useAssets } from "../../hooks/useAssets";
 import { useStore } from "../../store/useStore";
 import { FilterBar } from "./FilterBar";
@@ -7,7 +7,9 @@ import { FolderOpen } from "lucide-react";
 
 export function MasterPanel() {
   const { data: assets, isLoading } = useAssets();
-  const { filterType, searchQuery, sortOrder } = useStore();
+  const { filterType, searchQuery, sortOrder, selectedAssetId, selectAsset } =
+    useStore();
+  const listRef = useRef<HTMLDivElement>(null);
 
   const filteredAssets = useMemo(() => {
     if (!assets) return [];
@@ -51,13 +53,47 @@ export function MasterPanel() {
     return result;
   }, [assets, filterType, searchQuery, sortOrder]);
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (filteredAssets.length === 0) return;
+
+      const currentIndex = filteredAssets.findIndex(
+        (a) => a.id === selectedAssetId,
+      );
+
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        const nextIndex = Math.min(currentIndex + 1, filteredAssets.length - 1);
+        selectAsset(filteredAssets[nextIndex].id);
+        document
+          .getElementById(`asset-${filteredAssets[nextIndex].id}`)
+          ?.scrollIntoView({ block: "nearest" });
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        const prevIndex = Math.max(currentIndex - 1, 0);
+        selectAsset(filteredAssets[prevIndex].id);
+        document
+          .getElementById(`asset-${filteredAssets[prevIndex].id}`)
+          ?.scrollIntoView({ block: "nearest" });
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [filteredAssets, selectedAssetId, selectAsset]);
+
   return (
     <div className="flex flex-col h-full bg-bg border-r border-border">
       <FilterBar />
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-2">
+      <div
+        ref={listRef}
+        className="flex-1 overflow-y-auto p-4 space-y-2"
+        role="list"
+        aria-label="Asset list"
+      >
         {isLoading ? (
-          <div className="flex justify-center p-8 text-gray-400">
+          <div className="flex justify-center p-8 text-gray-400" role="status">
             Loading assets...
           </div>
         ) : filteredAssets.length === 0 ? (
