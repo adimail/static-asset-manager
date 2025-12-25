@@ -9,7 +9,7 @@ export function Header() {
     <header className="h-16 flex-none glass border-b border-border px-6 flex items-center justify-between z-30 sticky top-0">
       <div className="flex items-center gap-3 group cursor-default">
         <h1 className="text-xl font-bold tracking-tight text-text-primary">
-          Asset<span className="text-primary"> Manager</span>
+          Orion <span className="text-primary">Asset Manager</span>
         </h1>
       </div>
 

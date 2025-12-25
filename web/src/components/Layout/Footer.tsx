@@ -18,7 +18,7 @@ export function Footer() {
   return (
     <footer className="h-8 flex-none border-t border-border bg-surface/50 backdrop-blur-sm px-4 flex items-center justify-between text-[10px] uppercase tracking-widest text-text-muted z-30">
       <div className="flex items-center gap-4">
-        <span>Asset Manager v1.0.0</span>
+        <span>Orion Asset Manager v1.0.0</span>
 
         {isHealthy === true && (
           <div className="flex items-center gap-1.5 text-green-600 dark:text-green-500 font-bold animate-fade-in">

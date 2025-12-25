@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
 
 	"github.com/adimail/asset-manager/internal/assets"
 	"github.com/gorilla/mux"
@@ -41,13 +42,16 @@ func (h *AssetHandler) Upload(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *AssetHandler) List(w http.ResponseWriter, r *http.Request) {
-	list, err := h.service.List(r.Context())
+	page, _ := strconv.Atoi(r.URL.Query().Get("page"))
+	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
+
+	res, err := h.service.List(r.Context(), page, limit)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(list)
+	json.NewEncoder(w).Encode(res)
 }
 
 func (h *AssetHandler) Delete(w http.ResponseWriter, r *http.Request) {
@@ -66,5 +70,8 @@ func (h *AssetHandler) Download(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Asset not found", http.StatusNotFound)
 		return
 	}
-	http.ServeFile(w, r, asset.StoragePath)
+
+	// Reconstruct the absolute path before serving
+	fullPath := h.service.GetFullStoragePath(asset)
+	http.ServeFile(w, r, fullPath)
 }

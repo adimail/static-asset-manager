@@ -18,7 +18,7 @@ import { toast } from "sonner";
 import { api } from "../../api/client";
 
 export function AssetPreview({ asset }: { asset: Asset }) {
-  const { selectAsset, showDeleteConfirm, setShowDeleteConfirm } = useStore();
+  const { selectAsset, setShowDeleteConfirm, showDeleteConfirm } = useStore();
   const { mutate: deleteAsset } = useDeleteAsset();
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [textContent, setTextContent] = useState<string | null>(null);
@@ -31,30 +31,39 @@ export function AssetPreview({ asset }: { asset: Asset }) {
     ".txt",
     ".json",
     ".ts",
+    ".tsx",
     ".py",
     ".js",
+    ".jsx",
     ".md",
     ".go",
     ".yaml",
     ".yml",
     ".css",
     ".html",
+    ".sql",
+    ".sh",
+    ".ini",
+    ".conf",
   ];
-  const isTextFile = textExtensions.includes(asset.extension.toLowerCase());
-  const downloadUrl = `/api/v1/assets/${asset.id}/download`;
+
+  const isPreviewableText =
+    asset.file_type === "code" ||
+    textExtensions.includes(asset.extension.toLowerCase());
+
+  const apiPath = `/assets/${asset.id}/download`;
+  const publicUrl = `/api/v1${apiPath}`;
 
   useEffect(() => {
-    if (isTextFile) {
+    if (isPreviewableText) {
       setIsLoadingText(true);
       api
-        .get(downloadUrl, { responseType: "text" })
+        .get(apiPath, { responseType: "text" })
         .then((res) => setTextContent(res.data))
         .catch(() => setTextContent("Error loading preview content."))
         .finally(() => setIsLoadingText(false));
-    } else {
-      setTextContent(null);
     }
-  }, [asset.id, isTextFile, downloadUrl]);
+  }, [asset.id, isPreviewableText, apiPath]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -73,7 +82,11 @@ export function AssetPreview({ asset }: { asset: Asset }) {
       }
     };
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    return () => {
+      videoRef.current?.pause();
+      audioRef.current?.pause();
+      window.removeEventListener("keydown", handleKeyDown);
+    };
   }, []);
 
   const handleDelete = () => {
@@ -96,10 +109,10 @@ export function AssetPreview({ asset }: { asset: Asset }) {
   };
 
   return (
-    <div className="h-full flex flex-col bg-bg animate-fade-in">
+    <div className="h-full flex flex-col bg-bg">
       <div className="h-16 flex-none px-6 flex items-center justify-between border-b border-border bg-surface/50 backdrop-blur-sm z-10">
         {showDeleteConfirm ? (
-          <div className="flex items-center justify-between w-full bg-red-50 dark:bg-red-900/20 p-2 border border-red-200 dark:border-red-800 animate-scale-in">
+          <div className="flex items-center justify-between w-full bg-red-50 dark:bg-red-900/20 p-2 border border-red-200 dark:border-red-800">
             <span className="text-red-600 dark:text-red-400 font-medium px-2">
               Delete this file?
             </span>
@@ -142,7 +155,7 @@ export function AssetPreview({ asset }: { asset: Asset }) {
             </div>
             <div className="flex items-center gap-2">
               <a
-                href={downloadUrl}
+                href={publicUrl}
                 download
                 className="p-2 text-text-secondary hover:text-primary hover:bg-primary/10 transition-colors cursor-pointer"
                 title="Download"
@@ -172,14 +185,14 @@ export function AssetPreview({ asset }: { asset: Asset }) {
         <div className="relative w-full h-full max-w-4xl flex items-center justify-center overflow-hidden">
           {asset.file_type === "image" ? (
             <img
-              src={downloadUrl}
+              src={publicUrl}
               alt={asset.original_filename}
               className="max-w-full max-h-full object-contain shadow-xl"
             />
           ) : asset.file_type === "video" ? (
             <video
               ref={videoRef}
-              src={downloadUrl}
+              src={publicUrl}
               controls
               className="max-w-full max-h-full bg-black w-full h-full"
             />
@@ -190,15 +203,15 @@ export function AssetPreview({ asset }: { asset: Asset }) {
               </div>
               <audio
                 ref={audioRef}
-                src={downloadUrl}
+                src={publicUrl}
                 controls
                 className="w-full"
               />
             </div>
-          ) : isTextFile ? (
+          ) : isPreviewableText ? (
             <div className="w-full h-full bg-surface border border-border p-6 overflow-auto font-mono text-sm text-text-primary shadow-inner">
               {isLoadingText ? (
-                <div className="flex items-center gap-2 text-text-muted animate-pulse">
+                <div className="flex items-center gap-2 text-text-muted">
                   <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
                   Loading content...
                 </div>
@@ -215,7 +228,7 @@ export function AssetPreview({ asset }: { asset: Asset }) {
               </div>
               <p className="text-text-secondary mb-4">No preview available</p>
               <a
-                href={downloadUrl}
+                href={publicUrl}
                 download
                 className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white hover:bg-primary-hover transition-colors shadow-lg cursor-pointer"
               >
@@ -251,10 +264,7 @@ export function AssetPreview({ asset }: { asset: Asset }) {
           </div>
           <div
             onClick={() =>
-              copyToClipboard(
-                window.location.origin + downloadUrl,
-                "Public URL",
-              )
+              copyToClipboard(window.location.origin + publicUrl, "Public URL")
             }
             className="group cursor-pointer p-4 bg-surface-highlight/20 border border-dashed border-border hover:border-primary hover:bg-primary/5 transition-all"
           >
@@ -264,7 +274,7 @@ export function AssetPreview({ asset }: { asset: Asset }) {
             <div className="flex items-center justify-between gap-2">
               <code className="text-xs font-mono text-text-secondary truncate">
                 {window.location.origin}
-                {downloadUrl}
+                {publicUrl}
               </code>
               {copiedField === "Public URL" ? (
                 <Check size={14} className="text-green-500" />

@@ -22,8 +22,9 @@ interface AppState {
   setUploadOpen: (isOpen: boolean) => void;
   isHelpOpen: boolean;
   setHelpOpen: (isOpen: boolean) => void;
-  filterType: FileType | "all";
-  setFilterType: (type: FileType | "all") => void;
+  filterTypes: FileType[];
+  toggleFilterType: (type: FileType) => void;
+  clearFilters: () => void;
   searchQuery: string;
   setSearchQuery: (query: string) => void;
   sortOrder: SortOption;
@@ -58,8 +59,15 @@ export const useStore = create<AppState>()(
         })),
       isHelpOpen: false,
       setHelpOpen: (isOpen) => set({ isHelpOpen: isOpen }),
-      filterType: "all",
-      setFilterType: (type) => set({ filterType: type, currentPage: 1 }),
+      filterTypes: [],
+      toggleFilterType: (type) =>
+        set((state) => {
+          const next = state.filterTypes.includes(type)
+            ? state.filterTypes.filter((t) => t !== type)
+            : [...state.filterTypes, type];
+          return { filterTypes: next, currentPage: 1 };
+        }),
+      clearFilters: () => set({ filterTypes: [], currentPage: 1 }),
       searchQuery: "",
       setSearchQuery: (query) => set({ searchQuery: query, currentPage: 1 }),
       sortOrder: "newest",

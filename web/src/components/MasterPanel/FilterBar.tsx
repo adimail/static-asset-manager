@@ -1,12 +1,34 @@
 import { useEffect, useRef } from "react";
-import { Search, X, Filter, ArrowUpDown } from "lucide-react";
+import {
+  Search,
+  X,
+  ArrowUpDown,
+  Image,
+  Video,
+  Music,
+  FileText,
+  FileCode,
+  MoreHorizontal,
+  LayoutGrid,
+} from "lucide-react";
 import { useStore } from "../../store/useStore";
 import { FileType } from "../../api/types";
+import clsx from "clsx";
+
+const CATEGORIES: { type: FileType; label: string; icon: any }[] = [
+  { type: "image", label: "Images", icon: Image },
+  { type: "video", label: "Videos", icon: Video },
+  { type: "audio", label: "Audio", icon: Music },
+  { type: "document", label: "Docs", icon: FileText },
+  { type: "code", label: "Code", icon: FileCode },
+  { type: "other", label: "Other", icon: MoreHorizontal },
+];
 
 export function FilterBar() {
   const {
-    filterType,
-    setFilterType,
+    filterTypes,
+    toggleFilterType,
+    clearFilters,
     searchQuery,
     setSearchQuery,
     sortOrder,
@@ -24,7 +46,7 @@ export function FilterBar() {
   }, [shouldFocusSearch]);
 
   return (
-    <div className="p-4 space-y-3 flex-none bg-sidebar/50 backdrop-blur-sm sticky top-0 z-10 border-b border-border/50">
+    <div className="p-4 space-y-4 flex-none bg-sidebar/50 backdrop-blur-sm sticky top-0 z-10 border-b border-border/50">
       <div className="relative group">
         <Search
           className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted group-focus-within:text-primary transition-colors"
@@ -48,44 +70,57 @@ export function FilterBar() {
         )}
       </div>
 
-      <div className="flex gap-2">
-        <div className="relative flex-1">
-          <Filter
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none"
-            size={14}
-          />
-          <select
-            value={filterType}
-            onChange={(e) => setFilterType(e.target.value as FileType | "all")}
-            className="w-full h-9 pl-9 pr-8 bg-surface border border-border text-xs font-medium text-text-secondary focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none appearance-none cursor-pointer hover:bg-surface-highlight transition-colors"
-          >
-            <option value="all">All Types</option>
-            <option value="image">Images</option>
-            <option value="document">Documents</option>
-            <option value="video">Videos</option>
-            <option value="audio">Audio</option>
-            <option value="other">Other</option>
-          </select>
-        </div>
+      <div className="grid grid-cols-7 gap-1 w-full">
+        <button
+          onClick={clearFilters}
+          className={clsx(
+            "flex items-center justify-center gap-1.5 px-2 py-2 text-[10px] font-bold uppercase tracking-wider border transition-all cursor-pointer",
+            filterTypes.length === 0
+              ? "bg-primary border-primary text-white shadow-sm"
+              : "bg-surface border-border text-text-secondary hover:border-primary/50 hover:bg-surface-highlight/30",
+          )}
+        >
+          <LayoutGrid size={12} />
+          All
+        </button>
+        {CATEGORIES.map((cat) => {
+          const isActive = filterTypes.includes(cat.type);
+          const Icon = cat.icon;
+          return (
+            <button
+              key={cat.type}
+              onClick={() => toggleFilterType(cat.type)}
+              className={clsx(
+                "flex items-center justify-center gap-1.5 px-2 py-2 text-[10px] font-bold uppercase tracking-wider border transition-all cursor-pointer",
+                isActive
+                  ? "bg-primary border-primary text-white shadow-sm"
+                  : "bg-surface border-border text-text-secondary hover:border-primary/50 hover:bg-surface-highlight/30",
+              )}
+            >
+              <Icon size={12} />
+              {cat.label}
+            </button>
+          );
+        })}
+      </div>
 
-        <div className="relative flex-1">
-          <ArrowUpDown
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none"
-            size={14}
-          />
-          <select
-            value={sortOrder}
-            onChange={(e) => setSortOrder(e.target.value as any)}
-            className="w-full h-9 pl-9 pr-8 bg-surface border border-border text-xs font-medium text-text-secondary focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none appearance-none cursor-pointer hover:bg-surface-highlight transition-colors"
-          >
-            <option value="newest">Newest</option>
-            <option value="oldest">Oldest</option>
-            <option value="name-asc">A-Z</option>
-            <option value="name-desc">Z-A</option>
-            <option value="size-desc">Largest</option>
-            <option value="size-asc">Smallest</option>
-          </select>
-        </div>
+      <div className="relative">
+        <ArrowUpDown
+          className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none"
+          size={14}
+        />
+        <select
+          value={sortOrder}
+          onChange={(e) => setSortOrder(e.target.value as any)}
+          className="w-full h-9 pl-9 pr-8 bg-surface border border-border text-xs font-medium text-text-secondary focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none appearance-none cursor-pointer hover:bg-surface-highlight transition-colors"
+        >
+          <option value="newest">Newest First</option>
+          <option value="oldest">Oldest First</option>
+          <option value="name-asc">Name (A-Z)</option>
+          <option value="name-desc">Name (Z-A)</option>
+          <option value="size-desc">Size (Large)</option>
+          <option value="size-asc">Size (Small)</option>
+        </select>
       </div>
     </div>
   );

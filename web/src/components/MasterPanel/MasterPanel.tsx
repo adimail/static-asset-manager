@@ -3,7 +3,7 @@ import { useAssets } from "../../hooks/useAssets";
 import { useStore } from "../../store/useStore";
 import { FilterBar } from "./FilterBar";
 import { AssetItem } from "./AssetItem";
-import { FolderOpen } from "lucide-react";
+import { FolderOpen, Info } from "lucide-react";
 import {
   Pagination,
   PaginationContent,
@@ -13,26 +13,25 @@ import {
 } from "@/components/ui/pagination";
 
 export function MasterPanel() {
-  const { data: assets, isLoading } = useAssets();
   const {
-    filterType,
+    currentPage,
+    setCurrentPage,
+    filterTypes,
     searchQuery,
     sortOrder,
     selectedAssetId,
     selectAsset,
-    setShowDeleteConfirm,
-    currentPage,
-    setCurrentPage,
   } = useStore();
+
+  const { data, isLoading } = useAssets(currentPage);
   const listRef = useRef<HTMLDivElement>(null);
 
-  const ITEMS_PER_PAGE = 100;
+  const processedAssets = useMemo(() => {
+    if (!data?.assets) return [];
+    let result = [...data.assets];
 
-  const filteredAssets = useMemo(() => {
-    if (!assets) return [];
-    let result = [...assets];
-    if (filterType !== "all") {
-      result = result.filter((a) => a.file_type === filterType);
+    if (filterTypes.length > 0) {
+      result = result.filter((a) => filterTypes.includes(a.file_type));
     }
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
@@ -40,45 +39,44 @@ export function MasterPanel() {
         a.original_filename.toLowerCase().includes(q),
       );
     }
-    result.sort((a, b) => {
-      switch (sortOrder) {
-        case "newest":
-          return (
-            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-          );
-        case "oldest":
-          return (
-            new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-          );
-        case "name-asc":
-          return a.original_filename.localeCompare(b.original_filename);
-        case "name-desc":
-          return b.original_filename.localeCompare(a.original_filename);
-        case "size-desc":
-          return b.file_size_bytes - a.file_size_bytes;
-        case "size-asc":
-          return a.file_size_bytes - b.file_size_bytes;
-        default:
-          return 0;
-      }
-    });
-    return result;
-  }, [assets, filterType, searchQuery, sortOrder]);
 
-  const totalPages = Math.ceil(filteredAssets.length / ITEMS_PER_PAGE);
-  const paginatedAssets = useMemo(() => {
-    const start = (currentPage - 1) * ITEMS_PER_PAGE;
-    return filteredAssets.slice(start, start + ITEMS_PER_PAGE);
-  }, [filteredAssets, currentPage]);
+    if (sortOrder === "name-asc") {
+      result.sort((a, b) =>
+        a.original_filename.localeCompare(b.original_filename),
+      );
+    } else if (sortOrder === "name-desc") {
+      result.sort((a, b) =>
+        b.original_filename.localeCompare(a.original_filename),
+      );
+    } else if (sortOrder === "size-desc") {
+      result.sort((a, b) => b.file_size_bytes - a.file_size_bytes);
+    } else if (sortOrder === "size-asc") {
+      result.sort((a, b) => a.file_size_bytes - b.file_size_bytes);
+    } else if (sortOrder === "oldest") {
+      result.sort(
+        (a, b) =>
+          new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
+      );
+    } else {
+      result.sort(
+        (a, b) =>
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+      );
+    }
+
+    return result;
+  }, [data, filterTypes, searchQuery, sortOrder]);
+
+  const totalPages = data ? Math.ceil(data.total_count / data.limit) : 0;
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const isInput = ["INPUT", "TEXTAREA", "SELECT"].includes(
         (e.target as HTMLElement).tagName,
       );
-      if (isInput || paginatedAssets.length === 0) return;
+      if (isInput || processedAssets.length === 0) return;
 
-      const currentIndex = paginatedAssets.findIndex(
+      const currentIndex = processedAssets.findIndex(
         (a) => a.id === selectedAssetId,
       );
 
@@ -87,60 +85,63 @@ export function MasterPanel() {
         const nextIndex =
           currentIndex === -1
             ? 0
-            : Math.min(currentIndex + 1, paginatedAssets.length - 1);
-        selectAsset(paginatedAssets[nextIndex].id);
-        document
-          .getElementById(`asset-${paginatedAssets[nextIndex].id}`)
-          ?.scrollIntoView({ block: "nearest" });
+            : Math.min(currentIndex + 1, processedAssets.length - 1);
+        selectAsset(processedAssets[nextIndex].id);
       } else if (e.key === "ArrowUp") {
         e.preventDefault();
         const prevIndex =
           currentIndex === -1 ? 0 : Math.max(currentIndex - 1, 0);
-        selectAsset(paginatedAssets[prevIndex].id);
-        document
-          .getElementById(`asset-${paginatedAssets[prevIndex].id}`)
-          ?.scrollIntoView({ block: "nearest" });
+        selectAsset(processedAssets[prevIndex].id);
       } else if (e.key === "Home") {
         e.preventDefault();
-        selectAsset(paginatedAssets[0].id);
-        listRef.current?.scrollTo({ top: 0 });
+        selectAsset(processedAssets[0].id);
       } else if (e.key === "End") {
         e.preventDefault();
-        selectAsset(paginatedAssets[paginatedAssets.length - 1].id);
-        listRef.current?.scrollTo({ top: listRef.current.scrollHeight });
-      } else if (e.key === "Delete" && selectedAssetId) {
-        e.preventDefault();
-        setShowDeleteConfirm(true);
+        selectAsset(processedAssets[processedAssets.length - 1].id);
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [paginatedAssets, selectedAssetId, selectAsset, setShowDeleteConfirm]);
+  }, [processedAssets, selectedAssetId, selectAsset]);
+
+  useEffect(() => {
+    if (selectedAssetId) {
+      const element = document.getElementById(`asset-${selectedAssetId}`);
+      if (element) {
+        element.scrollIntoView({ block: "nearest", behavior: "auto" });
+      }
+    }
+  }, [selectedAssetId]);
 
   return (
     <div className="flex flex-col h-full bg-gradient-to-b from-sidebar to-bg border-r border-border">
       <FilterBar />
+
+      <div className="px-4 py-2 flex items-center justify-between bg-surface-highlight/10 border-b border-border/30">
+        <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-text-muted">
+          <Info size={12} />
+          <span>
+            Showing {processedAssets.length} of {data?.total_count || 0} assets
+          </span>
+        </div>
+      </div>
+
       <div
         ref={listRef}
         className="flex-1 overflow-y-auto p-3 space-y-2 focus:outline-none"
-        role="list"
-        tabIndex={-1}
       >
         {isLoading ? (
-          <div className="flex flex-col items-center justify-center h-32 space-y-3">
+          <div className="flex flex-col items-center justify-center h-32">
             <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-            <span className="text-sm text-text-muted">Loading assets...</span>
           </div>
-        ) : paginatedAssets.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-64 text-text-muted animate-fade-in">
+        ) : processedAssets.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-64 text-text-muted">
             <FolderOpen size={32} className="opacity-50 mb-4" />
-            <p className="text-lg font-medium text-text-primary">
-              No files found
-            </p>
+            <p>No files found</p>
           </div>
         ) : (
-          paginatedAssets.map((asset) => (
+          processedAssets.map((asset) => (
             <AssetItem key={asset.id} asset={asset} />
           ))
         )}

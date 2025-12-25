@@ -1,4 +1,4 @@
-import { useCallback, useState, useRef } from "react";
+import { useCallback, useState } from "react";
 import { useDropzone } from "react-dropzone";
 import { UploadCloud, X, CheckCircle, AlertCircle, File } from "lucide-react";
 import { useStore } from "../../store/useStore";
@@ -14,6 +14,7 @@ export function UploadInterface() {
       file: File;
       status: "pending" | "uploading" | "success" | "error";
       progress: number;
+      error?: string;
     }>
   >([]);
 
@@ -44,10 +45,21 @@ export function UploadInterface() {
             ),
           );
           toast.success(`Uploaded ${item.file.name}`);
-        } catch (e) {
+        } catch (e: any) {
+          const errorMessage = e.response?.data || e.message || "Upload failed";
           setUploads((prev) =>
             prev.map((u) =>
-              u.file === item.file ? { ...u, status: "error", progress: 0 } : u,
+              u.file === item.file
+                ? {
+                    ...u,
+                    status: "error",
+                    progress: 0,
+                    error:
+                      typeof errorMessage === "string"
+                        ? errorMessage
+                        : "Server error",
+                  }
+                : u,
             ),
           );
           toast.error(`Failed to upload ${item.file.name}`);
@@ -72,10 +84,7 @@ export function UploadInterface() {
   const hasActiveUploads = uploads.length > 0;
 
   return (
-    <div
-      className="h-full flex flex-col p-8 bg-bg animate-fade-in"
-      onKeyDown={handleKeyDown}
-    >
+    <div className="h-full flex flex-col p-8 bg-bg" onKeyDown={handleKeyDown}>
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold text-text-primary">Upload Files</h2>
         <button
@@ -92,9 +101,9 @@ export function UploadInterface() {
           onClick={open}
           tabIndex={0}
           className={clsx(
-            "flex-1 border-2 border-dashed flex flex-col items-center justify-center transition-all duration-300 cursor-pointer group outline-none focus:ring-2 focus:ring-primary",
+            "flex-1 border-2 border-dashed flex flex-col items-center justify-center bg-primary-light transition-all duration-300 cursor-pointer group outline-none focus:ring-2 focus:ring-primary",
             isDragActive
-              ? "border-primary bg-primary/5 scale-[1.01]"
+              ? "border-primary scale-[1.01]"
               : "border-border hover:border-primary/50 hover:bg-surface-highlight/50",
           )}
         >
@@ -117,55 +126,63 @@ export function UploadInterface() {
           {uploads.map((upload, idx) => (
             <div
               key={idx}
-              className="bg-surface p-4 border border-border shadow-sm flex items-center gap-4 animate-slide-up"
+              className="bg-surface p-4 border border-border shadow-sm flex flex-col gap-2"
             >
-              <div className="w-10 h-10 bg-surface-highlight flex items-center justify-center flex-none">
-                <File size={20} className="text-text-secondary" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex justify-between mb-1.5">
-                  <span className="font-medium text-sm text-text-primary truncate">
-                    {upload.file.name}
-                  </span>
-                  <span
-                    className={clsx(
-                      "text-xs font-medium",
-                      upload.status === "success"
-                        ? "text-green-500"
-                        : upload.status === "error"
-                          ? "text-red-500"
-                          : "text-primary",
-                    )}
-                  >
-                    {upload.status === "success"
-                      ? "Completed"
-                      : upload.status === "error"
-                        ? "Failed"
-                        : `${upload.progress}%`}
-                  </span>
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 bg-surface-highlight flex items-center justify-center flex-none">
+                  <File size={20} className="text-text-secondary" />
                 </div>
-                <div className="h-1.5 bg-surface-highlight rounded-full overflow-hidden">
-                  <div
-                    className={clsx(
-                      "h-full transition-all duration-500 ease-out rounded-full",
-                      upload.status === "success"
-                        ? "bg-green-500"
+                <div className="flex-1 min-w-0">
+                  <div className="flex justify-between mb-1.5">
+                    <span className="font-medium text-sm text-text-primary truncate">
+                      {upload.file.name}
+                    </span>
+                    <span
+                      className={clsx(
+                        "text-xs font-medium",
+                        upload.status === "success"
+                          ? "text-green-500"
+                          : upload.status === "error"
+                            ? "text-red-500"
+                            : "text-primary",
+                      )}
+                    >
+                      {upload.status === "success"
+                        ? "Completed"
                         : upload.status === "error"
-                          ? "bg-red-500"
-                          : "bg-amber-700",
-                    )}
-                    style={{ width: `${upload.progress}%` }}
-                  />
+                          ? "Failed"
+                          : `${upload.progress}%`}
+                    </span>
+                  </div>
+                  <div className="h-1.5 bg-surface-highlight rounded-full overflow-hidden">
+                    <div
+                      className={clsx(
+                        "h-full transition-all duration-500 ease-out rounded-full",
+                        upload.status === "success"
+                          ? "bg-green-500"
+                          : upload.status === "error"
+                            ? "bg-red-500"
+                            : "bg-amber-700",
+                      )}
+                      style={{ width: `${upload.progress}%` }}
+                    />
+                  </div>
+                </div>
+                <div className="flex-none">
+                  {upload.status === "success" && (
+                    <CheckCircle size={20} className="text-green-500" />
+                  )}
+                  {upload.status === "error" && (
+                    <AlertCircle size={20} className="text-red-500" />
+                  )}
                 </div>
               </div>
-              <div className="flex-none">
-                {upload.status === "success" && (
-                  <CheckCircle size={20} className="text-green-500" />
-                )}
-                {upload.status === "error" && (
-                  <AlertCircle size={20} className="text-red-500" />
-                )}
-              </div>
+
+              {upload.status === "error" && upload.error && (
+                <div className="ml-14 text-xs text-red-600 dark:text-red-400 font-medium animate-slide-up">
+                  Reason: {upload.error}
+                </div>
+              )}
             </div>
           ))}
 

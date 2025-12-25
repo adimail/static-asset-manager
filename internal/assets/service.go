@@ -35,6 +35,11 @@ func NewService(client *ent.Client, storage FileStorage, validator *Validator, a
 	}
 }
 
+// getAbsolutePath joins the base assets directory with the relative path stored in DB
+func (s *Service) getAbsolutePath(relativePath string) string {
+	return filepath.Join(s.assetsDir, relativePath)
+}
+
 func (s *Service) Upload(ctx context.Context, req UploadRequest) (*Asset, error) {
 	if err := s.validator.Validate(req); err != nil {
 		return nil, err
@@ -44,10 +49,11 @@ func (s *Service) Upload(ctx context.Context, req UploadRequest) (*Asset, error)
 	ext := strings.ToLower(filepath.Ext(req.Filename))
 	fileType := s.determineFileType(ext)
 
+	// We only save the relative path in the database
 	relativePath := filepath.Join(string(fileType), id+ext)
-	storagePath := filepath.Join(s.assetsDir, relativePath)
+	fullPath := s.getAbsolutePath(relativePath)
 
-	if err := s.storage.Write(storagePath, req.File); err != nil {
+	if err := s.storage.Write(fullPath, req.File); err != nil {
 		return nil, fmt.Errorf("failed to write file: %w", err)
 	}
 
@@ -57,20 +63,35 @@ func (s *Service) Upload(ctx context.Context, req UploadRequest) (*Asset, error)
 		SetFileType(asset.FileType(fileType)).
 		SetExtension(ext).
 		SetFileSizeBytes(req.Size).
-		SetStoragePath(storagePath).
+		SetStoragePath(relativePath). // Store relative path
 		SetCreatedAt(time.Now()).
 		Save(ctx)
 	if err != nil {
-		s.storage.Delete(storagePath)
+		s.storage.Delete(fullPath)
 		return nil, fmt.Errorf("failed to save metadata: %w", err)
 	}
 
 	return s.mapToDomain(saved), nil
 }
 
-func (s *Service) List(ctx context.Context) ([]*Asset, error) {
+func (s *Service) List(ctx context.Context, page, limit int) (*ListResponse, error) {
+	if page < 1 {
+		page = 1
+	}
+	if limit < 1 {
+		limit = 50
+	}
+	offset := (page - 1) * limit
+
+	total, err := s.client.Asset.Query().Count(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	list, err := s.client.Asset.Query().
 		Order(ent.Desc(asset.FieldCreatedAt)).
+		Limit(limit).
+		Offset(offset).
 		All(ctx)
 	if err != nil {
 		return nil, err
@@ -80,7 +101,13 @@ func (s *Service) List(ctx context.Context) ([]*Asset, error) {
 	for i, item := range list {
 		result[i] = s.mapToDomain(item)
 	}
-	return result, nil
+
+	return &ListResponse{
+		Assets:     result,
+		TotalCount: total,
+		Page:       page,
+		Limit:      limit,
+	}, nil
 }
 
 func (s *Service) Delete(ctx context.Context, id string) error {
@@ -89,8 +116,9 @@ func (s *Service) Delete(ctx context.Context, id string) error {
 		return err
 	}
 
-	if err := s.storage.Delete(a.StoragePath); err != nil {
-		log.Printf("failed to delete file from storage: %s, error: %v", a.StoragePath, err)
+	fullPath := s.getAbsolutePath(a.StoragePath)
+	if err := s.storage.Delete(fullPath); err != nil {
+		log.Printf("failed to delete file from storage: %s, error: %v", fullPath, err)
 	}
 
 	return s.client.Asset.DeleteOneID(id).Exec(ctx)
@@ -102,6 +130,11 @@ func (s *Service) Get(ctx context.Context, id string) (*Asset, error) {
 		return nil, err
 	}
 	return s.mapToDomain(a), nil
+}
+
+// GetFullStoragePath is used by handlers to serve the file
+func (s *Service) GetFullStoragePath(a *Asset) string {
+	return s.getAbsolutePath(a.StoragePath)
 }
 
 func (s *Service) mapToDomain(e *ent.Asset) *Asset {
@@ -126,6 +159,8 @@ func (s *Service) determineFileType(ext string) FileType {
 		return FileTypeAudio
 	case ".pdf", ".doc", ".docx", ".txt", ".xls", ".xlsx":
 		return FileTypeDocument
+	case ".py", ".js", ".ts", ".tsx", ".json", ".go", ".yaml", ".yml", ".css", ".html", ".md":
+		return FileTypeCode
 	default:
 		return FileTypeOther
 	}

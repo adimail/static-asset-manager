@@ -1,12 +1,14 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../api/client";
-import { Asset } from "../api/types";
+import { Assets } from "../api/types";
 
-export function useAssets() {
+export function useAssets(page: number = 1, limit: number = 50) {
   return useQuery({
-    queryKey: ["assets"],
+    queryKey: ["assets", page, limit],
     queryFn: async () => {
-      const { data } = await api.get<Asset[]>("/assets");
+      const { data } = await api.get<Assets>(
+        `/assets?page=${page}&limit=${limit}`,
+      );
       return data;
     },
   });
