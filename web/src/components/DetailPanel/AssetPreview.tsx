@@ -69,8 +69,10 @@ export function AssetPreview({ asset }: { asset: Asset }) {
     asset.file_type === "code" ||
     textExtensions.includes(asset.extension.toLowerCase());
 
-  const apiPath = `/assets/${asset.id}/download`;
-  const publicUrl = `/api/v1${apiPath}`;
+  const baseUrl = import.meta.env.VITE_ASSET_BASE_URL;
+  const publicUrl = baseUrl
+    ? `${baseUrl.replace(/\/$/, "")}/${asset.id}${asset.extension}`
+    : `/api/v1/assets/${asset.id}/download`;
 
   const canCompress =
     (asset.file_type === "image" || asset.file_type === "video") &&
@@ -80,12 +82,12 @@ export function AssetPreview({ asset }: { asset: Asset }) {
     if (isPreviewableText) {
       setIsLoadingText(true);
       api
-        .get(apiPath, { responseType: "text" })
+        .get(`/assets/${asset.id}/download`, { responseType: "text" })
         .then((res) => setTextContent(res.data))
         .catch(() => setTextContent("Error loading preview content."))
         .finally(() => setIsLoadingText(false));
     }
-  }, [asset.id, isPreviewableText, apiPath]);
+  }, [asset.id, isPreviewableText]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -362,7 +364,10 @@ export function AssetPreview({ asset }: { asset: Asset }) {
           </div>
           <div
             onClick={() =>
-              copyToClipboard(window.location.origin + publicUrl, "Public URL")
+              copyToClipboard(
+                baseUrl ? publicUrl : window.location.origin + publicUrl,
+                "Public URL",
+              )
             }
             className="group cursor-pointer p-4 bg-surface-highlight/20 border border-dashed border-border hover:border-primary hover:bg-primary/5 transition-all"
           >
@@ -371,8 +376,7 @@ export function AssetPreview({ asset }: { asset: Asset }) {
             </label>
             <div className="flex items-center justify-between gap-2">
               <code className="text-xs font-mono text-text-secondary truncate">
-                {window.location.origin}
-                {publicUrl}
+                {baseUrl ? publicUrl : window.location.origin + publicUrl}
               </code>
               {copiedField === "Public URL" ? (
                 <Check size={14} className="text-green-500" />
