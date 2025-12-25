@@ -10,11 +10,13 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/adimail/asset-manager/ent"
 	"github.com/adimail/asset-manager/internal/api"
 	"github.com/adimail/asset-manager/internal/assets"
 	"github.com/adimail/asset-manager/internal/config"
 	"github.com/adimail/asset-manager/internal/filesystem"
-	"github.com/adimail/asset-manager/internal/storage"
+
+	_ "github.com/mattn/go-sqlite3"
 )
 
 func main() {
@@ -24,21 +26,20 @@ func main() {
 		log.Fatal(err)
 	}
 
-	db, err := storage.Connect(cfg.Database.Path)
+	client, err := ent.Open("sqlite3", "file:"+cfg.Database.Path+"?cache=shared&_fk=1")
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed opening connection to sqlite: %v", err)
 	}
-	defer db.Close()
+	defer client.Close()
 
-	if _, err := db.Exec(storage.MigrationSQL); err != nil {
-		log.Fatal(err)
+	if err := client.Schema.Create(context.Background()); err != nil {
+		log.Fatalf("failed creating schema resources: %v", err)
 	}
 
-	repo := storage.NewRepository(db)
 	fs := filesystem.New()
 	validator := assets.NewValidator(cfg.Server.MaxUploadSize)
 
-	svc := assets.NewService(repo, fs, validator, cfg.Storage.AssetsDir)
+	svc := assets.NewService(client, fs, validator, cfg.Storage.AssetsDir)
 	handler := api.NewServer(svc)
 
 	srv := &http.Server{

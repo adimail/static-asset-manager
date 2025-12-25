@@ -9,15 +9,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/adimail/asset-manager/ent"
+	"github.com/adimail/asset-manager/ent/asset"
 	"github.com/google/uuid"
 )
-
-type Repository interface {
-	Create(ctx context.Context, asset *Asset) error
-	List(ctx context.Context) ([]*Asset, error)
-	Delete(ctx context.Context, id string) error
-	Get(ctx context.Context, id string) (*Asset, error)
-}
 
 type FileStorage interface {
 	Write(path string, data io.Reader) error
@@ -25,15 +20,15 @@ type FileStorage interface {
 }
 
 type Service struct {
-	repo      Repository
+	client    *ent.Client
 	storage   FileStorage
 	validator *Validator
 	assetsDir string
 }
 
-func NewService(repo Repository, storage FileStorage, validator *Validator, assetsDir string) *Service {
+func NewService(client *ent.Client, storage FileStorage, validator *Validator, assetsDir string) *Service {
 	return &Service{
-		repo:      repo,
+		client:    client,
 		storage:   storage,
 		validator: validator,
 		assetsDir: assetsDir,
@@ -56,43 +51,69 @@ func (s *Service) Upload(ctx context.Context, req UploadRequest) (*Asset, error)
 		return nil, fmt.Errorf("failed to write file: %w", err)
 	}
 
-	asset := &Asset{
-		ID:               id,
-		OriginalFilename: req.Filename,
-		FileType:         fileType,
-		Extension:        ext,
-		FileSizeBytes:    req.Size,
-		StoragePath:      storagePath,
-		CreatedAt:        time.Now(),
-	}
-
-	if err := s.repo.Create(ctx, asset); err != nil {
+	saved, err := s.client.Asset.Create().
+		SetID(id).
+		SetOriginalFilename(req.Filename).
+		SetFileType(asset.FileType(fileType)).
+		SetExtension(ext).
+		SetFileSizeBytes(req.Size).
+		SetStoragePath(storagePath).
+		SetCreatedAt(time.Now()).
+		Save(ctx)
+	if err != nil {
 		s.storage.Delete(storagePath)
 		return nil, fmt.Errorf("failed to save metadata: %w", err)
 	}
 
-	return asset, nil
+	return s.mapToDomain(saved), nil
 }
 
 func (s *Service) List(ctx context.Context) ([]*Asset, error) {
-	return s.repo.List(ctx)
+	list, err := s.client.Asset.Query().
+		Order(ent.Desc(asset.FieldCreatedAt)).
+		All(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]*Asset, len(list))
+	for i, item := range list {
+		result[i] = s.mapToDomain(item)
+	}
+	return result, nil
 }
 
 func (s *Service) Delete(ctx context.Context, id string) error {
-	asset, err := s.repo.Get(ctx, id)
+	a, err := s.client.Asset.Get(ctx, id)
 	if err != nil {
 		return err
 	}
 
-	if err := s.storage.Delete(asset.StoragePath); err != nil {
-		log.Printf("failed to delete file from storage: %s, error: %v", asset.StoragePath, err)
+	if err := s.storage.Delete(a.StoragePath); err != nil {
+		log.Printf("failed to delete file from storage: %s, error: %v", a.StoragePath, err)
 	}
 
-	return s.repo.Delete(ctx, id)
+	return s.client.Asset.DeleteOneID(id).Exec(ctx)
 }
 
 func (s *Service) Get(ctx context.Context, id string) (*Asset, error) {
-	return s.repo.Get(ctx, id)
+	a, err := s.client.Asset.Get(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	return s.mapToDomain(a), nil
+}
+
+func (s *Service) mapToDomain(e *ent.Asset) *Asset {
+	return &Asset{
+		ID:               e.ID,
+		OriginalFilename: e.OriginalFilename,
+		FileType:         FileType(e.FileType),
+		Extension:        e.Extension,
+		FileSizeBytes:    e.FileSizeBytes,
+		StoragePath:      e.StoragePath,
+		CreatedAt:        e.CreatedAt,
+	}
 }
 
 func (s *Service) determineFileType(ext string) FileType {

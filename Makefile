@@ -1,19 +1,23 @@
-.PHONY: run build clean test dev-backend dev-frontend
+.PHONY: run build clean test dev-backend dev-frontend generate
 
-run:
+generate:
+	@echo "Generating Ent code..."
+	go run -mod=mod entgo.io/ent/cmd/ent generate ./ent/schema
+
+run: generate
 	cd web && npm run build
 	go run cmd/server/main.go
 
-build:
+build: generate
 	go build -o bin/server cmd/server/main.go
 
 clean:
 	rm -rf bin/ data/assets.db static/
 
-test:
+test: generate
 	go test ./...
 
-dev-backend:
+dev-backend: generate
 	@echo "Starting backend server (http://localhost:8080)..."
 	go run cmd/server/main.go
 
