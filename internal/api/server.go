@@ -36,6 +36,7 @@ func NewServer(assetService *assets.Service, tagService *tags.Service) http.Hand
 	// Tags
 	api.HandleFunc("/tags", th.Create).Methods("POST")
 	api.HandleFunc("/tags", th.List).Methods("GET")
+	api.HandleFunc("/tags/bulk/assets", th.BulkTagAssets).Methods("POST")
 	api.HandleFunc("/tags/{id}", th.Delete).Methods("DELETE")
 
 	staticPath := "web/dist"

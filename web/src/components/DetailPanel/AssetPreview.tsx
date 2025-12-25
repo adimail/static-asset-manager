@@ -9,6 +9,7 @@ import {
   Download,
   Music,
   Zap,
+  Tag as TagIcon,
 } from "lucide-react";
 import { Asset } from "../../api/types";
 import { useStore } from "../../store/useStore";
@@ -19,7 +20,12 @@ import { toast } from "sonner";
 import { api } from "../../api/client";
 
 export function AssetPreview({ asset }: { asset: Asset }) {
-  const { selectAsset, setShowDeleteConfirm, showDeleteConfirm } = useStore();
+  const {
+    selectAsset,
+    setShowDeleteConfirm,
+    showDeleteConfirm,
+    setTagModalOpen,
+  } = useStore();
   const { mutate: deleteAsset } = useDeleteAsset();
   const { mutate: compressAsset } = useCompressAsset();
   const [copiedField, setCopiedField] = useState<string | null>(null);
@@ -164,6 +170,13 @@ export function AssetPreview({ asset }: { asset: Asset }) {
               </div>
             </div>
             <div className="flex items-center gap-2">
+              <button
+                onClick={() => setTagModalOpen(true)}
+                className="p-2 text-text-secondary hover:text-primary hover:bg-primary/10 transition-colors cursor-pointer"
+                title="Add Tags"
+              >
+                <TagIcon size={18} />
+              </button>
               {canCompress && (
                 <button
                   onClick={handleCompress}
@@ -330,6 +343,23 @@ export function AssetPreview({ asset }: { asset: Asset }) {
             </div>
           )}
         </div>
+        {asset.tags.length > 0 && (
+          <div className="mt-4 flex flex-wrap gap-2">
+            {asset.tags.map((tag) => (
+              <span
+                key={tag.id}
+                className="px-2 py-1 rounded-full text-xs font-medium border border-border"
+                style={{
+                  backgroundColor: `${tag.color}20`,
+                  color: tag.color,
+                  borderColor: `${tag.color}40`,
+                }}
+              >
+                {tag.name}
+              </span>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

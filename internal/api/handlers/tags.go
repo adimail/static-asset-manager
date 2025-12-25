@@ -71,3 +71,20 @@ func (h *TagHandler) TagAsset(w http.ResponseWriter, r *http.Request) {
 	}
 	w.WriteHeader(http.StatusOK)
 }
+
+func (h *TagHandler) BulkTagAssets(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		AssetIDs []string `json:"asset_ids"`
+		TagIDs   []string `json:"tag_ids"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	if err := h.service.BulkTagAssets(r.Context(), req.AssetIDs, req.TagIDs); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+}

@@ -83,11 +83,13 @@ func (s *Service) worker(id int) {
 
 func (s *Service) processJob(assetID string) {
 	ctx := context.Background()
+	log.Printf("[Job %s] Starting compression...", assetID)
+	startTime := time.Now()
 
 	// Fetch asset and job
 	a, err := s.client.Asset.Query().Where(asset.ID(assetID)).Only(ctx)
 	if err != nil {
-		log.Printf("Worker failed to fetch asset %s: %v", assetID, err)
+		log.Printf("[Job %s] Worker failed to fetch asset: %v", assetID, err)
 		return
 	}
 
@@ -102,12 +104,12 @@ func (s *Service) processJob(assetID string) {
 		job, _ = s.client.CompressionJob.Create().
 			SetAssetID(assetID).
 			SetStatus(string(StatusProcessing)).
-			SetStartedAt(time.Now()).
+			SetStartedAt(startTime).
 			Save(ctx)
 	} else {
 		job.Update().
 			SetStatus(string(StatusProcessing)).
-			SetStartedAt(time.Now()).
+			SetStartedAt(startTime).
 			Save(ctx)
 	}
 
@@ -120,6 +122,7 @@ func (s *Service) processJob(assetID string) {
 	err = s.runFFmpeg(originalPath, tempOutput, a.FileType)
 	if err != nil {
 		errMsg := err.Error()
+		log.Printf("[Job %s] FFmpeg failed: %v", assetID, err)
 		job.Update().
 			SetStatus(string(StatusFailed)).
 			SetError(errMsg).
@@ -150,6 +153,8 @@ func (s *Service) processJob(assetID string) {
 		SetProgress(100).
 		SetCompletedAt(time.Now()).
 		Save(ctx)
+
+	log.Printf("[Job %s] Compression completed in %v. Ratio: %.2f", assetID, time.Since(startTime), ratio)
 }
 
 func (s *Service) runFFmpeg(input, output, fileType string) error {

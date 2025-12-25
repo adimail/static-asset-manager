@@ -31,6 +31,7 @@ export function MasterPanel() {
     clearSelection,
     toggleSelectionMode,
     selectAll,
+    setTagModalOpen,
   } = useStore();
 
   const { data, isLoading } = useAssets(currentPage);
@@ -150,7 +151,8 @@ export function MasterPanel() {
   };
 
   const handleBulkTag = () => {
-    toast.info("Bulk tagging feature coming soon");
+    if (selectedAssetIds.length === 0) return;
+    setTagModalOpen(true);
   };
 
   return (

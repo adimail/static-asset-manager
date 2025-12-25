@@ -7,6 +7,7 @@ import { Header } from "./components/Layout/Header";
 import { MainLayout } from "./components/Layout/MainLayout";
 import { Footer } from "./components/Layout/Footer";
 import { HelpModal } from "./components/Layout/HelpModal";
+import { TagManagerModal } from "./components/Tags/TagManagerModal";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -27,6 +28,8 @@ function App() {
     isHelpOpen,
     isUploadOpen,
     selectedAssetId,
+    isTagModalOpen,
+    setTagModalOpen,
   } = useStore();
 
   useEffect(() => {
@@ -65,6 +68,7 @@ function App() {
 
       if (e.key === "Escape") {
         if (isHelpOpen) setHelpOpen(false);
+        else if (isTagModalOpen) setTagModalOpen(false);
         else if (isUploadOpen) setUploadOpen(false);
         else if (selectedAssetId) selectAsset(null);
       }
@@ -81,10 +85,12 @@ function App() {
     isHelpOpen,
     isUploadOpen,
     selectedAssetId,
+    isTagModalOpen,
     setUploadOpen,
     triggerSearchFocus,
     selectAsset,
     setHelpOpen,
+    setTagModalOpen,
   ]);
 
   return (
@@ -108,6 +114,7 @@ function App() {
           <MainLayout />
           <Footer />
           <HelpModal />
+          <TagManagerModal />
         </div>
       </BrowserRouter>
     </QueryClientProvider>

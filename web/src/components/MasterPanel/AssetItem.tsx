@@ -153,24 +153,34 @@ export const AssetItem = memo(({ asset }: { asset: Asset }) => {
           <h3 className="text-sm font-medium truncate text-primary">
             {asset.original_filename}
           </h3>
-          <div className="flex items-center gap-2 text-xs text-text-secondary mt-1">
-            <span className="capitalize">{asset.file_type}</span>
-            <span className="w-1 h-1 rounded-full bg-text-muted/50" />
-            <span className="font-mono">
-              {formatBytes(asset.file_size_bytes)}
-            </span>
+          <div className="flex flex-col gap-1 mt-1">
+            <div className="flex items-center gap-2 text-xs text-text-secondary">
+              <span className="capitalize">{asset.file_type}</span>
+              <span className="w-1 h-1 rounded-full bg-text-muted/50" />
+              <span className="font-mono">
+                {formatBytes(asset.file_size_bytes)}
+              </span>
+            </div>
+
             {asset.tags.length > 0 && (
-              <div className="flex gap-1 ml-2">
-                {asset.tags.slice(0, 2).map((t) => (
+              <div className="flex flex-wrap gap-1">
+                {asset.tags.slice(0, 3).map((t) => (
                   <span
                     key={t.id}
-                    className="px-1.5 py-0.5 bg-surface-highlight rounded text-[10px]"
-                    style={{ color: t.color }}
+                    className="px-1.5 py-0.5 rounded text-[9px] font-medium border border-transparent"
+                    style={{
+                      backgroundColor: `${t.color}15`,
+                      color: t.color,
+                    }}
                   >
                     {t.name}
                   </span>
                 ))}
-                {asset.tags.length > 2 && <span>+{asset.tags.length - 2}</span>}
+                {asset.tags.length > 3 && (
+                  <span className="px-1.5 py-0.5 bg-surface-highlight rounded text-[9px] text-text-muted">
+                    +{asset.tags.length - 3}
+                  </span>
+                )}
               </div>
             )}
           </div>
@@ -197,7 +207,7 @@ export const AssetItem = memo(({ asset }: { asset: Asset }) => {
           </div>
         )}
 
-        <div className="text-[10px] text-text-muted hidden sm:block">
+        <div className="text-[10px] text-text-muted hidden sm:block self-start mt-1">
           {formatDate(asset.created_at)}
         </div>
       </div>

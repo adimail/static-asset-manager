@@ -39,10 +39,14 @@ interface AppState {
   // Selection Mode
   isSelectionMode: boolean;
   toggleSelectionMode: () => void;
-  selectedAssetIds: string[]; // Using array for easier persistence/serialization
+  selectedAssetIds: string[];
   toggleAssetSelection: (id: string) => void;
   clearSelection: () => void;
   selectAll: (ids: string[]) => void;
+
+  // Tag Modal
+  isTagModalOpen: boolean;
+  setTagModalOpen: (isOpen: boolean) => void;
 }
 
 export const useStore = create<AppState>()(
@@ -107,6 +111,9 @@ export const useStore = create<AppState>()(
       clearSelection: () =>
         set({ selectedAssetIds: [], isSelectionMode: false }),
       selectAll: (ids) => set({ selectedAssetIds: ids }),
+
+      isTagModalOpen: false,
+      setTagModalOpen: (isOpen) => set({ isTagModalOpen: isOpen }),
     }),
     {
       name: "asset-manager-storage",
