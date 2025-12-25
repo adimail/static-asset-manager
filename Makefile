@@ -8,7 +8,7 @@ build:
 	go build -o bin/server cmd/server/main.go
 
 clean:
-	rm -rf bin/ data/assets.db assets/
+	rm -rf bin/ data/assets.db static/
 
 test:
 	go test ./...

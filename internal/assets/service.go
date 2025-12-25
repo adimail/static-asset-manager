@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log"
 	"path/filepath"
 	"strings"
 	"time"
@@ -26,29 +27,30 @@ type FileStorage interface {
 type Service struct {
 	repo      Repository
 	storage   FileStorage
+	validator *Validator
 	assetsDir string
 }
 
-func NewService(repo Repository, storage FileStorage, assetsDir string) *Service {
+func NewService(repo Repository, storage FileStorage, validator *Validator, assetsDir string) *Service {
 	return &Service{
 		repo:      repo,
 		storage:   storage,
+		validator: validator,
 		assetsDir: assetsDir,
 	}
 }
 
-type UploadRequest struct {
-	File     io.Reader
-	Filename string
-	Size     int64
-}
-
 func (s *Service) Upload(ctx context.Context, req UploadRequest) (*Asset, error) {
+	if err := s.validator.Validate(req); err != nil {
+		return nil, err
+	}
+
 	id := uuid.New().String()
 	ext := strings.ToLower(filepath.Ext(req.Filename))
-	fileType := determineFileType(ext)
+	fileType := s.determineFileType(ext)
 
-	storagePath := filepath.Join(s.assetsDir, id+ext)
+	relativePath := filepath.Join(string(fileType), id+ext)
+	storagePath := filepath.Join(s.assetsDir, relativePath)
 
 	if err := s.storage.Write(storagePath, req.File); err != nil {
 		return nil, fmt.Errorf("failed to write file: %w", err)
@@ -83,7 +85,7 @@ func (s *Service) Delete(ctx context.Context, id string) error {
 	}
 
 	if err := s.storage.Delete(asset.StoragePath); err != nil {
-		// Log error but continue to delete metadata
+		log.Printf("failed to delete file from storage: %s, error: %v", asset.StoragePath, err)
 	}
 
 	return s.repo.Delete(ctx, id)
@@ -93,15 +95,15 @@ func (s *Service) Get(ctx context.Context, id string) (*Asset, error) {
 	return s.repo.Get(ctx, id)
 }
 
-func determineFileType(ext string) FileType {
+func (s *Service) determineFileType(ext string) FileType {
 	switch ext {
 	case ".jpg", ".jpeg", ".png", ".gif", ".webp", ".svg":
 		return FileTypeImage
-	case ".mp4", ".mov", ".webm":
+	case ".mp4", ".mov", ".webm", ".avi", ".mkv":
 		return FileTypeVideo
-	case ".mp3", ".wav", ".ogg":
+	case ".mp3", ".wav", ".ogg", ".flac":
 		return FileTypeAudio
-	case ".pdf", ".doc", ".docx", ".txt":
+	case ".pdf", ".doc", ".docx", ".txt", ".xls", ".xlsx":
 		return FileTypeDocument
 	default:
 		return FileTypeOther

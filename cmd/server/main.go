@@ -2,11 +2,11 @@ package main
 
 import (
 	"context"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"syscall"
 	"time"
 
@@ -20,20 +20,25 @@ import (
 func main() {
 	cfg := config.Load()
 
+	if err := os.MkdirAll(filepath.Dir(cfg.Database.Path), 0o755); err != nil {
+		log.Fatal(err)
+	}
+
 	db, err := storage.Connect(cfg.Database.Path)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer db.Close()
 
-	migration, err := ioutil.ReadFile("internal/storage/migrations/001_initial.sql")
-	if err == nil {
-		db.Exec(string(migration))
+	if _, err := db.Exec(storage.MigrationSQL); err != nil {
+		log.Fatal(err)
 	}
 
 	repo := storage.NewRepository(db)
 	fs := filesystem.New()
-	svc := assets.NewService(repo, fs, cfg.Storage.AssetsDir)
+	validator := assets.NewValidator(cfg.Server.MaxUploadSize)
+
+	svc := assets.NewService(repo, fs, validator, cfg.Storage.AssetsDir)
 	handler := api.NewServer(svc)
 
 	srv := &http.Server{
