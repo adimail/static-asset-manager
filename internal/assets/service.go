@@ -11,6 +11,8 @@ import (
 
 	"github.com/adimail/asset-manager/ent"
 	"github.com/adimail/asset-manager/ent/asset"
+	"github.com/adimail/asset-manager/ent/tag"
+	"github.com/adimail/asset-manager/internal/preprocessing"
 	"github.com/google/uuid"
 )
 
@@ -20,18 +22,20 @@ type FileStorage interface {
 }
 
 type Service struct {
-	client    *ent.Client
-	storage   FileStorage
-	validator *Validator
-	assetsDir string
+	client       *ent.Client
+	storage      FileStorage
+	validator    *Validator
+	assetsDir    string
+	preprocessor *preprocessing.Service
 }
 
-func NewService(client *ent.Client, storage FileStorage, validator *Validator, assetsDir string) *Service {
+func NewService(client *ent.Client, storage FileStorage, validator *Validator, assetsDir string, preprocessor *preprocessing.Service) *Service {
 	return &Service{
-		client:    client,
-		storage:   storage,
-		validator: validator,
-		assetsDir: assetsDir,
+		client:       client,
+		storage:      storage,
+		validator:    validator,
+		assetsDir:    assetsDir,
+		preprocessor: preprocessor,
 	}
 }
 
@@ -58,21 +62,29 @@ func (s *Service) Upload(ctx context.Context, req UploadRequest) (*Asset, error)
 	saved, err := s.client.Asset.Create().
 		SetID(id).
 		SetOriginalFilename(req.Filename).
-		SetFileType(asset.FileType(fileType)).
+		SetFileType(string(fileType)).
 		SetExtension(ext).
 		SetFileSizeBytes(req.Size).
 		SetStoragePath(managedPath).
 		SetCreatedAt(time.Now()).
+		SetIsCompressed(false).
 		Save(ctx)
 	if err != nil {
 		s.storage.Delete(managedPath)
 		return nil, fmt.Errorf("failed to save metadata: %w", err)
 	}
 
+	// Trigger compression if applicable
+	if fileType == FileTypeImage || fileType == FileTypeVideo {
+		if err := s.preprocessor.Enqueue(context.Background(), saved.ID); err != nil {
+			log.Printf("Failed to enqueue compression job for %s: %v", saved.ID, err)
+		}
+	}
+
 	return s.mapToDomain(saved), nil
 }
 
-func (s *Service) List(ctx context.Context, page, limit int) (*ListResponse, error) {
+func (s *Service) List(ctx context.Context, page, limit int, tagNames []string) (*ListResponse, error) {
 	if page < 1 {
 		page = 1
 	}
@@ -81,12 +93,19 @@ func (s *Service) List(ctx context.Context, page, limit int) (*ListResponse, err
 	}
 	offset := (page - 1) * limit
 
-	total, err := s.client.Asset.Query().Count(ctx)
+	query := s.client.Asset.Query()
+
+	if len(tagNames) > 0 {
+		query.Where(asset.HasTagsWith(tag.NameIn(tagNames...)))
+	}
+
+	total, err := query.Count(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	list, err := s.client.Asset.Query().
+	list, err := query.
+		WithTags().
 		Order(ent.Desc(asset.FieldCreatedAt)).
 		Limit(limit).
 		Offset(offset).
@@ -118,11 +137,38 @@ func (s *Service) Delete(ctx context.Context, id string) error {
 		log.Printf("failed to delete file from managed storage: %s, error: %v", a.StoragePath, err)
 	}
 
+	// Also delete original if exists
+	if a.OriginalPath != "" {
+		s.storage.Delete(a.OriginalPath)
+	}
+
 	return s.client.Asset.DeleteOneID(id).Exec(ctx)
 }
 
+func (s *Service) DeleteMultiple(ctx context.Context, ids []string) error {
+	// 1. Get all assets to find paths
+	assets, err := s.client.Asset.Query().Where(asset.IDIn(ids...)).All(ctx)
+	if err != nil {
+		return err
+	}
+
+	// 2. Delete files
+	for _, a := range assets {
+		if err := s.storage.Delete(a.StoragePath); err != nil {
+			log.Printf("failed to delete file: %v", err)
+		}
+		if a.OriginalPath != "" {
+			s.storage.Delete(a.OriginalPath)
+		}
+	}
+
+	// 3. Delete from DB
+	_, err = s.client.Asset.Delete().Where(asset.IDIn(ids...)).Exec(ctx)
+	return err
+}
+
 func (s *Service) Get(ctx context.Context, id string) (*Asset, error) {
-	a, err := s.client.Asset.Get(ctx, id)
+	a, err := s.client.Asset.Query().Where(asset.ID(id)).WithTags().Only(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -134,6 +180,11 @@ func (s *Service) GetFullStoragePath(a *Asset) string {
 }
 
 func (s *Service) mapToDomain(e *ent.Asset) *Asset {
+	tags := make([]Tag, len(e.Edges.Tags))
+	for i, t := range e.Edges.Tags {
+		tags[i] = Tag{ID: t.ID, Name: t.Name, Color: t.Color}
+	}
+
 	return &Asset{
 		ID:               e.ID,
 		OriginalFilename: e.OriginalFilename,
@@ -142,6 +193,9 @@ func (s *Service) mapToDomain(e *ent.Asset) *Asset {
 		FileSizeBytes:    e.FileSizeBytes,
 		StoragePath:      e.StoragePath,
 		CreatedAt:        e.CreatedAt,
+		IsCompressed:     e.IsCompressed,
+		CompressionRatio: e.CompressionRatio,
+		Tags:             tags,
 	}
 }
 

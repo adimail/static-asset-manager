@@ -16,14 +16,23 @@ const (
 	FileTypeOther    FileType = "other"
 )
 
+type Tag struct {
+	ID    string `json:"id"`
+	Name  string `json:"name"`
+	Color string `json:"color"`
+}
+
 type Asset struct {
 	ID               string    `json:"id"`
 	OriginalFilename string    `json:"original_filename"`
 	FileType         FileType  `json:"file_type"`
 	Extension        string    `json:"extension"`
 	FileSizeBytes    int64     `json:"file_size_bytes"`
-	StoragePath      string    `json:"-"` // Internal use only
+	StoragePath      string    `json:"-"`
 	CreatedAt        time.Time `json:"created_at"`
+	IsCompressed     bool      `json:"is_compressed"`
+	CompressionRatio float64   `json:"compression_ratio,omitempty"`
+	Tags             []Tag     `json:"tags"`
 }
 
 type ListResponse struct {

@@ -35,6 +35,14 @@ interface AppState {
   setShowDeleteConfirm: (show: boolean) => void;
   currentPage: number;
   setCurrentPage: (page: number) => void;
+
+  // Selection Mode
+  isSelectionMode: boolean;
+  toggleSelectionMode: () => void;
+  selectedAssetIds: string[]; // Using array for easier persistence/serialization
+  toggleAssetSelection: (id: string) => void;
+  clearSelection: () => void;
+  selectAll: (ids: string[]) => void;
 }
 
 export const useStore = create<AppState>()(
@@ -79,6 +87,26 @@ export const useStore = create<AppState>()(
       setShowDeleteConfirm: (show) => set({ showDeleteConfirm: show }),
       currentPage: 1,
       setCurrentPage: (page) => set({ currentPage: page }),
+
+      isSelectionMode: false,
+      toggleSelectionMode: () =>
+        set((state) => ({
+          isSelectionMode: !state.isSelectionMode,
+          selectedAssetIds: [],
+        })),
+      selectedAssetIds: [],
+      toggleAssetSelection: (id) =>
+        set((state) => {
+          const exists = state.selectedAssetIds.includes(id);
+          return {
+            selectedAssetIds: exists
+              ? state.selectedAssetIds.filter((x) => x !== id)
+              : [...state.selectedAssetIds, id],
+          };
+        }),
+      clearSelection: () =>
+        set({ selectedAssetIds: [], isSelectionMode: false }),
+      selectAll: (ids) => set({ selectedAssetIds: ids }),
     }),
     {
       name: "asset-manager-storage",

@@ -20,7 +20,7 @@ type Asset struct {
 	// OriginalFilename holds the value of the "original_filename" field.
 	OriginalFilename string `json:"original_filename,omitempty"`
 	// FileType holds the value of the "file_type" field.
-	FileType asset.FileType `json:"file_type,omitempty"`
+	FileType string `json:"file_type,omitempty"`
 	// Extension holds the value of the "extension" field.
 	Extension string `json:"extension,omitempty"`
 	// FileSizeBytes holds the value of the "file_size_bytes" field.
@@ -28,8 +28,46 @@ type Asset struct {
 	// StoragePath holds the value of the "storage_path" field.
 	StoragePath string `json:"storage_path,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
-	CreatedAt    time.Time `json:"created_at,omitempty"`
+	CreatedAt time.Time `json:"created_at,omitempty"`
+	// IsCompressed holds the value of the "is_compressed" field.
+	IsCompressed bool `json:"is_compressed,omitempty"`
+	// OriginalPath holds the value of the "original_path" field.
+	OriginalPath string `json:"original_path,omitempty"`
+	// CompressionRatio holds the value of the "compression_ratio" field.
+	CompressionRatio float64 `json:"compression_ratio,omitempty"`
+	// Edges holds the relations/edges for other nodes in the graph.
+	// The values are being populated by the AssetQuery when eager-loading is set.
+	Edges        AssetEdges `json:"edges"`
 	selectValues sql.SelectValues
+}
+
+// AssetEdges holds the relations/edges for other nodes in the graph.
+type AssetEdges struct {
+	// Tags holds the value of the tags edge.
+	Tags []*Tag `json:"tags,omitempty"`
+	// CompressionJobs holds the value of the compression_jobs edge.
+	CompressionJobs []*CompressionJob `json:"compression_jobs,omitempty"`
+	// loadedTypes holds the information for reporting if a
+	// type was loaded (or requested) in eager-loading or not.
+	loadedTypes [2]bool
+}
+
+// TagsOrErr returns the Tags value or an error if the edge
+// was not loaded in eager-loading.
+func (e AssetEdges) TagsOrErr() ([]*Tag, error) {
+	if e.loadedTypes[0] {
+		return e.Tags, nil
+	}
+	return nil, &NotLoadedError{edge: "tags"}
+}
+
+// CompressionJobsOrErr returns the CompressionJobs value or an error if the edge
+// was not loaded in eager-loading.
+func (e AssetEdges) CompressionJobsOrErr() ([]*CompressionJob, error) {
+	if e.loadedTypes[1] {
+		return e.CompressionJobs, nil
+	}
+	return nil, &NotLoadedError{edge: "compression_jobs"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -37,9 +75,13 @@ func (*Asset) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
+		case asset.FieldIsCompressed:
+			values[i] = new(sql.NullBool)
+		case asset.FieldCompressionRatio:
+			values[i] = new(sql.NullFloat64)
 		case asset.FieldFileSizeBytes:
 			values[i] = new(sql.NullInt64)
-		case asset.FieldID, asset.FieldOriginalFilename, asset.FieldFileType, asset.FieldExtension, asset.FieldStoragePath:
+		case asset.FieldID, asset.FieldOriginalFilename, asset.FieldFileType, asset.FieldExtension, asset.FieldStoragePath, asset.FieldOriginalPath:
 			values[i] = new(sql.NullString)
 		case asset.FieldCreatedAt:
 			values[i] = new(sql.NullTime)
@@ -74,7 +116,7 @@ func (_m *Asset) assignValues(columns []string, values []any) error {
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field file_type", values[i])
 			} else if value.Valid {
-				_m.FileType = asset.FileType(value.String)
+				_m.FileType = value.String
 			}
 		case asset.FieldExtension:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -100,6 +142,24 @@ func (_m *Asset) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.CreatedAt = value.Time
 			}
+		case asset.FieldIsCompressed:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field is_compressed", values[i])
+			} else if value.Valid {
+				_m.IsCompressed = value.Bool
+			}
+		case asset.FieldOriginalPath:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field original_path", values[i])
+			} else if value.Valid {
+				_m.OriginalPath = value.String
+			}
+		case asset.FieldCompressionRatio:
+			if value, ok := values[i].(*sql.NullFloat64); !ok {
+				return fmt.Errorf("unexpected type %T for field compression_ratio", values[i])
+			} else if value.Valid {
+				_m.CompressionRatio = value.Float64
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -111,6 +171,16 @@ func (_m *Asset) assignValues(columns []string, values []any) error {
 // This includes values selected through modifiers, order, etc.
 func (_m *Asset) Value(name string) (ent.Value, error) {
 	return _m.selectValues.Get(name)
+}
+
+// QueryTags queries the "tags" edge of the Asset entity.
+func (_m *Asset) QueryTags() *TagQuery {
+	return NewAssetClient(_m.config).QueryTags(_m)
+}
+
+// QueryCompressionJobs queries the "compression_jobs" edge of the Asset entity.
+func (_m *Asset) QueryCompressionJobs() *CompressionJobQuery {
+	return NewAssetClient(_m.config).QueryCompressionJobs(_m)
 }
 
 // Update returns a builder for updating this Asset.
@@ -140,7 +210,7 @@ func (_m *Asset) String() string {
 	builder.WriteString(_m.OriginalFilename)
 	builder.WriteString(", ")
 	builder.WriteString("file_type=")
-	builder.WriteString(fmt.Sprintf("%v", _m.FileType))
+	builder.WriteString(_m.FileType)
 	builder.WriteString(", ")
 	builder.WriteString("extension=")
 	builder.WriteString(_m.Extension)
@@ -153,6 +223,15 @@ func (_m *Asset) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("created_at=")
 	builder.WriteString(_m.CreatedAt.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("is_compressed=")
+	builder.WriteString(fmt.Sprintf("%v", _m.IsCompressed))
+	builder.WriteString(", ")
+	builder.WriteString("original_path=")
+	builder.WriteString(_m.OriginalPath)
+	builder.WriteString(", ")
+	builder.WriteString("compression_ratio=")
+	builder.WriteString(fmt.Sprintf("%v", _m.CompressionRatio))
 	builder.WriteByte(')')
 	return builder.String()
 }

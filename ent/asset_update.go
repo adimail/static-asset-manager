@@ -6,12 +6,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/adimail/asset-manager/ent/asset"
+	"github.com/adimail/asset-manager/ent/compressionjob"
 	"github.com/adimail/asset-manager/ent/predicate"
+	"github.com/adimail/asset-manager/ent/tag"
 )
 
 // AssetUpdate is the builder for updating Asset entities.
@@ -42,13 +45,13 @@ func (_u *AssetUpdate) SetNillableOriginalFilename(v *string) *AssetUpdate {
 }
 
 // SetFileType sets the "file_type" field.
-func (_u *AssetUpdate) SetFileType(v asset.FileType) *AssetUpdate {
+func (_u *AssetUpdate) SetFileType(v string) *AssetUpdate {
 	_u.mutation.SetFileType(v)
 	return _u
 }
 
 // SetNillableFileType sets the "file_type" field if the given value is not nil.
-func (_u *AssetUpdate) SetNillableFileType(v *asset.FileType) *AssetUpdate {
+func (_u *AssetUpdate) SetNillableFileType(v *string) *AssetUpdate {
 	if v != nil {
 		_u.SetFileType(*v)
 	}
@@ -104,9 +107,156 @@ func (_u *AssetUpdate) SetNillableStoragePath(v *string) *AssetUpdate {
 	return _u
 }
 
+// SetCreatedAt sets the "created_at" field.
+func (_u *AssetUpdate) SetCreatedAt(v time.Time) *AssetUpdate {
+	_u.mutation.SetCreatedAt(v)
+	return _u
+}
+
+// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
+func (_u *AssetUpdate) SetNillableCreatedAt(v *time.Time) *AssetUpdate {
+	if v != nil {
+		_u.SetCreatedAt(*v)
+	}
+	return _u
+}
+
+// SetIsCompressed sets the "is_compressed" field.
+func (_u *AssetUpdate) SetIsCompressed(v bool) *AssetUpdate {
+	_u.mutation.SetIsCompressed(v)
+	return _u
+}
+
+// SetNillableIsCompressed sets the "is_compressed" field if the given value is not nil.
+func (_u *AssetUpdate) SetNillableIsCompressed(v *bool) *AssetUpdate {
+	if v != nil {
+		_u.SetIsCompressed(*v)
+	}
+	return _u
+}
+
+// SetOriginalPath sets the "original_path" field.
+func (_u *AssetUpdate) SetOriginalPath(v string) *AssetUpdate {
+	_u.mutation.SetOriginalPath(v)
+	return _u
+}
+
+// SetNillableOriginalPath sets the "original_path" field if the given value is not nil.
+func (_u *AssetUpdate) SetNillableOriginalPath(v *string) *AssetUpdate {
+	if v != nil {
+		_u.SetOriginalPath(*v)
+	}
+	return _u
+}
+
+// ClearOriginalPath clears the value of the "original_path" field.
+func (_u *AssetUpdate) ClearOriginalPath() *AssetUpdate {
+	_u.mutation.ClearOriginalPath()
+	return _u
+}
+
+// SetCompressionRatio sets the "compression_ratio" field.
+func (_u *AssetUpdate) SetCompressionRatio(v float64) *AssetUpdate {
+	_u.mutation.ResetCompressionRatio()
+	_u.mutation.SetCompressionRatio(v)
+	return _u
+}
+
+// SetNillableCompressionRatio sets the "compression_ratio" field if the given value is not nil.
+func (_u *AssetUpdate) SetNillableCompressionRatio(v *float64) *AssetUpdate {
+	if v != nil {
+		_u.SetCompressionRatio(*v)
+	}
+	return _u
+}
+
+// AddCompressionRatio adds value to the "compression_ratio" field.
+func (_u *AssetUpdate) AddCompressionRatio(v float64) *AssetUpdate {
+	_u.mutation.AddCompressionRatio(v)
+	return _u
+}
+
+// ClearCompressionRatio clears the value of the "compression_ratio" field.
+func (_u *AssetUpdate) ClearCompressionRatio() *AssetUpdate {
+	_u.mutation.ClearCompressionRatio()
+	return _u
+}
+
+// AddTagIDs adds the "tags" edge to the Tag entity by IDs.
+func (_u *AssetUpdate) AddTagIDs(ids ...string) *AssetUpdate {
+	_u.mutation.AddTagIDs(ids...)
+	return _u
+}
+
+// AddTags adds the "tags" edges to the Tag entity.
+func (_u *AssetUpdate) AddTags(v ...*Tag) *AssetUpdate {
+	ids := make([]string, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddTagIDs(ids...)
+}
+
+// AddCompressionJobIDs adds the "compression_jobs" edge to the CompressionJob entity by IDs.
+func (_u *AssetUpdate) AddCompressionJobIDs(ids ...string) *AssetUpdate {
+	_u.mutation.AddCompressionJobIDs(ids...)
+	return _u
+}
+
+// AddCompressionJobs adds the "compression_jobs" edges to the CompressionJob entity.
+func (_u *AssetUpdate) AddCompressionJobs(v ...*CompressionJob) *AssetUpdate {
+	ids := make([]string, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddCompressionJobIDs(ids...)
+}
+
 // Mutation returns the AssetMutation object of the builder.
 func (_u *AssetUpdate) Mutation() *AssetMutation {
 	return _u.mutation
+}
+
+// ClearTags clears all "tags" edges to the Tag entity.
+func (_u *AssetUpdate) ClearTags() *AssetUpdate {
+	_u.mutation.ClearTags()
+	return _u
+}
+
+// RemoveTagIDs removes the "tags" edge to Tag entities by IDs.
+func (_u *AssetUpdate) RemoveTagIDs(ids ...string) *AssetUpdate {
+	_u.mutation.RemoveTagIDs(ids...)
+	return _u
+}
+
+// RemoveTags removes "tags" edges to Tag entities.
+func (_u *AssetUpdate) RemoveTags(v ...*Tag) *AssetUpdate {
+	ids := make([]string, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveTagIDs(ids...)
+}
+
+// ClearCompressionJobs clears all "compression_jobs" edges to the CompressionJob entity.
+func (_u *AssetUpdate) ClearCompressionJobs() *AssetUpdate {
+	_u.mutation.ClearCompressionJobs()
+	return _u
+}
+
+// RemoveCompressionJobIDs removes the "compression_jobs" edge to CompressionJob entities by IDs.
+func (_u *AssetUpdate) RemoveCompressionJobIDs(ids ...string) *AssetUpdate {
+	_u.mutation.RemoveCompressionJobIDs(ids...)
+	return _u
+}
+
+// RemoveCompressionJobs removes "compression_jobs" edges to CompressionJob entities.
+func (_u *AssetUpdate) RemoveCompressionJobs(v ...*CompressionJob) *AssetUpdate {
+	ids := make([]string, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveCompressionJobIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -136,30 +286,7 @@ func (_u *AssetUpdate) ExecX(ctx context.Context) {
 	}
 }
 
-// check runs all checks and user-defined validators on the builder.
-func (_u *AssetUpdate) check() error {
-	if v, ok := _u.mutation.OriginalFilename(); ok {
-		if err := asset.OriginalFilenameValidator(v); err != nil {
-			return &ValidationError{Name: "original_filename", err: fmt.Errorf(`ent: validator failed for field "Asset.original_filename": %w`, err)}
-		}
-	}
-	if v, ok := _u.mutation.FileType(); ok {
-		if err := asset.FileTypeValidator(v); err != nil {
-			return &ValidationError{Name: "file_type", err: fmt.Errorf(`ent: validator failed for field "Asset.file_type": %w`, err)}
-		}
-	}
-	if v, ok := _u.mutation.FileSizeBytes(); ok {
-		if err := asset.FileSizeBytesValidator(v); err != nil {
-			return &ValidationError{Name: "file_size_bytes", err: fmt.Errorf(`ent: validator failed for field "Asset.file_size_bytes": %w`, err)}
-		}
-	}
-	return nil
-}
-
 func (_u *AssetUpdate) sqlSave(ctx context.Context) (_node int, err error) {
-	if err := _u.check(); err != nil {
-		return _node, err
-	}
 	_spec := sqlgraph.NewUpdateSpec(asset.Table, asset.Columns, sqlgraph.NewFieldSpec(asset.FieldID, field.TypeString))
 	if ps := _u.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
@@ -172,7 +299,7 @@ func (_u *AssetUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		_spec.SetField(asset.FieldOriginalFilename, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.FileType(); ok {
-		_spec.SetField(asset.FieldFileType, field.TypeEnum, value)
+		_spec.SetField(asset.FieldFileType, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.Extension(); ok {
 		_spec.SetField(asset.FieldExtension, field.TypeString, value)
@@ -185,6 +312,117 @@ func (_u *AssetUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.StoragePath(); ok {
 		_spec.SetField(asset.FieldStoragePath, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.CreatedAt(); ok {
+		_spec.SetField(asset.FieldCreatedAt, field.TypeTime, value)
+	}
+	if value, ok := _u.mutation.IsCompressed(); ok {
+		_spec.SetField(asset.FieldIsCompressed, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.OriginalPath(); ok {
+		_spec.SetField(asset.FieldOriginalPath, field.TypeString, value)
+	}
+	if _u.mutation.OriginalPathCleared() {
+		_spec.ClearField(asset.FieldOriginalPath, field.TypeString)
+	}
+	if value, ok := _u.mutation.CompressionRatio(); ok {
+		_spec.SetField(asset.FieldCompressionRatio, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedCompressionRatio(); ok {
+		_spec.AddField(asset.FieldCompressionRatio, field.TypeFloat64, value)
+	}
+	if _u.mutation.CompressionRatioCleared() {
+		_spec.ClearField(asset.FieldCompressionRatio, field.TypeFloat64)
+	}
+	if _u.mutation.TagsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   asset.TagsTable,
+			Columns: asset.TagsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(tag.FieldID, field.TypeString),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedTagsIDs(); len(nodes) > 0 && !_u.mutation.TagsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   asset.TagsTable,
+			Columns: asset.TagsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(tag.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.TagsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   asset.TagsTable,
+			Columns: asset.TagsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(tag.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.CompressionJobsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   asset.CompressionJobsTable,
+			Columns: []string{asset.CompressionJobsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(compressionjob.FieldID, field.TypeString),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedCompressionJobsIDs(); len(nodes) > 0 && !_u.mutation.CompressionJobsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   asset.CompressionJobsTable,
+			Columns: []string{asset.CompressionJobsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(compressionjob.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.CompressionJobsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   asset.CompressionJobsTable,
+			Columns: []string{asset.CompressionJobsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(compressionjob.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -221,13 +459,13 @@ func (_u *AssetUpdateOne) SetNillableOriginalFilename(v *string) *AssetUpdateOne
 }
 
 // SetFileType sets the "file_type" field.
-func (_u *AssetUpdateOne) SetFileType(v asset.FileType) *AssetUpdateOne {
+func (_u *AssetUpdateOne) SetFileType(v string) *AssetUpdateOne {
 	_u.mutation.SetFileType(v)
 	return _u
 }
 
 // SetNillableFileType sets the "file_type" field if the given value is not nil.
-func (_u *AssetUpdateOne) SetNillableFileType(v *asset.FileType) *AssetUpdateOne {
+func (_u *AssetUpdateOne) SetNillableFileType(v *string) *AssetUpdateOne {
 	if v != nil {
 		_u.SetFileType(*v)
 	}
@@ -283,9 +521,156 @@ func (_u *AssetUpdateOne) SetNillableStoragePath(v *string) *AssetUpdateOne {
 	return _u
 }
 
+// SetCreatedAt sets the "created_at" field.
+func (_u *AssetUpdateOne) SetCreatedAt(v time.Time) *AssetUpdateOne {
+	_u.mutation.SetCreatedAt(v)
+	return _u
+}
+
+// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
+func (_u *AssetUpdateOne) SetNillableCreatedAt(v *time.Time) *AssetUpdateOne {
+	if v != nil {
+		_u.SetCreatedAt(*v)
+	}
+	return _u
+}
+
+// SetIsCompressed sets the "is_compressed" field.
+func (_u *AssetUpdateOne) SetIsCompressed(v bool) *AssetUpdateOne {
+	_u.mutation.SetIsCompressed(v)
+	return _u
+}
+
+// SetNillableIsCompressed sets the "is_compressed" field if the given value is not nil.
+func (_u *AssetUpdateOne) SetNillableIsCompressed(v *bool) *AssetUpdateOne {
+	if v != nil {
+		_u.SetIsCompressed(*v)
+	}
+	return _u
+}
+
+// SetOriginalPath sets the "original_path" field.
+func (_u *AssetUpdateOne) SetOriginalPath(v string) *AssetUpdateOne {
+	_u.mutation.SetOriginalPath(v)
+	return _u
+}
+
+// SetNillableOriginalPath sets the "original_path" field if the given value is not nil.
+func (_u *AssetUpdateOne) SetNillableOriginalPath(v *string) *AssetUpdateOne {
+	if v != nil {
+		_u.SetOriginalPath(*v)
+	}
+	return _u
+}
+
+// ClearOriginalPath clears the value of the "original_path" field.
+func (_u *AssetUpdateOne) ClearOriginalPath() *AssetUpdateOne {
+	_u.mutation.ClearOriginalPath()
+	return _u
+}
+
+// SetCompressionRatio sets the "compression_ratio" field.
+func (_u *AssetUpdateOne) SetCompressionRatio(v float64) *AssetUpdateOne {
+	_u.mutation.ResetCompressionRatio()
+	_u.mutation.SetCompressionRatio(v)
+	return _u
+}
+
+// SetNillableCompressionRatio sets the "compression_ratio" field if the given value is not nil.
+func (_u *AssetUpdateOne) SetNillableCompressionRatio(v *float64) *AssetUpdateOne {
+	if v != nil {
+		_u.SetCompressionRatio(*v)
+	}
+	return _u
+}
+
+// AddCompressionRatio adds value to the "compression_ratio" field.
+func (_u *AssetUpdateOne) AddCompressionRatio(v float64) *AssetUpdateOne {
+	_u.mutation.AddCompressionRatio(v)
+	return _u
+}
+
+// ClearCompressionRatio clears the value of the "compression_ratio" field.
+func (_u *AssetUpdateOne) ClearCompressionRatio() *AssetUpdateOne {
+	_u.mutation.ClearCompressionRatio()
+	return _u
+}
+
+// AddTagIDs adds the "tags" edge to the Tag entity by IDs.
+func (_u *AssetUpdateOne) AddTagIDs(ids ...string) *AssetUpdateOne {
+	_u.mutation.AddTagIDs(ids...)
+	return _u
+}
+
+// AddTags adds the "tags" edges to the Tag entity.
+func (_u *AssetUpdateOne) AddTags(v ...*Tag) *AssetUpdateOne {
+	ids := make([]string, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddTagIDs(ids...)
+}
+
+// AddCompressionJobIDs adds the "compression_jobs" edge to the CompressionJob entity by IDs.
+func (_u *AssetUpdateOne) AddCompressionJobIDs(ids ...string) *AssetUpdateOne {
+	_u.mutation.AddCompressionJobIDs(ids...)
+	return _u
+}
+
+// AddCompressionJobs adds the "compression_jobs" edges to the CompressionJob entity.
+func (_u *AssetUpdateOne) AddCompressionJobs(v ...*CompressionJob) *AssetUpdateOne {
+	ids := make([]string, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddCompressionJobIDs(ids...)
+}
+
 // Mutation returns the AssetMutation object of the builder.
 func (_u *AssetUpdateOne) Mutation() *AssetMutation {
 	return _u.mutation
+}
+
+// ClearTags clears all "tags" edges to the Tag entity.
+func (_u *AssetUpdateOne) ClearTags() *AssetUpdateOne {
+	_u.mutation.ClearTags()
+	return _u
+}
+
+// RemoveTagIDs removes the "tags" edge to Tag entities by IDs.
+func (_u *AssetUpdateOne) RemoveTagIDs(ids ...string) *AssetUpdateOne {
+	_u.mutation.RemoveTagIDs(ids...)
+	return _u
+}
+
+// RemoveTags removes "tags" edges to Tag entities.
+func (_u *AssetUpdateOne) RemoveTags(v ...*Tag) *AssetUpdateOne {
+	ids := make([]string, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveTagIDs(ids...)
+}
+
+// ClearCompressionJobs clears all "compression_jobs" edges to the CompressionJob entity.
+func (_u *AssetUpdateOne) ClearCompressionJobs() *AssetUpdateOne {
+	_u.mutation.ClearCompressionJobs()
+	return _u
+}
+
+// RemoveCompressionJobIDs removes the "compression_jobs" edge to CompressionJob entities by IDs.
+func (_u *AssetUpdateOne) RemoveCompressionJobIDs(ids ...string) *AssetUpdateOne {
+	_u.mutation.RemoveCompressionJobIDs(ids...)
+	return _u
+}
+
+// RemoveCompressionJobs removes "compression_jobs" edges to CompressionJob entities.
+func (_u *AssetUpdateOne) RemoveCompressionJobs(v ...*CompressionJob) *AssetUpdateOne {
+	ids := make([]string, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveCompressionJobIDs(ids...)
 }
 
 // Where appends a list predicates to the AssetUpdate builder.
@@ -328,30 +713,7 @@ func (_u *AssetUpdateOne) ExecX(ctx context.Context) {
 	}
 }
 
-// check runs all checks and user-defined validators on the builder.
-func (_u *AssetUpdateOne) check() error {
-	if v, ok := _u.mutation.OriginalFilename(); ok {
-		if err := asset.OriginalFilenameValidator(v); err != nil {
-			return &ValidationError{Name: "original_filename", err: fmt.Errorf(`ent: validator failed for field "Asset.original_filename": %w`, err)}
-		}
-	}
-	if v, ok := _u.mutation.FileType(); ok {
-		if err := asset.FileTypeValidator(v); err != nil {
-			return &ValidationError{Name: "file_type", err: fmt.Errorf(`ent: validator failed for field "Asset.file_type": %w`, err)}
-		}
-	}
-	if v, ok := _u.mutation.FileSizeBytes(); ok {
-		if err := asset.FileSizeBytesValidator(v); err != nil {
-			return &ValidationError{Name: "file_size_bytes", err: fmt.Errorf(`ent: validator failed for field "Asset.file_size_bytes": %w`, err)}
-		}
-	}
-	return nil
-}
-
 func (_u *AssetUpdateOne) sqlSave(ctx context.Context) (_node *Asset, err error) {
-	if err := _u.check(); err != nil {
-		return _node, err
-	}
 	_spec := sqlgraph.NewUpdateSpec(asset.Table, asset.Columns, sqlgraph.NewFieldSpec(asset.FieldID, field.TypeString))
 	id, ok := _u.mutation.ID()
 	if !ok {
@@ -381,7 +743,7 @@ func (_u *AssetUpdateOne) sqlSave(ctx context.Context) (_node *Asset, err error)
 		_spec.SetField(asset.FieldOriginalFilename, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.FileType(); ok {
-		_spec.SetField(asset.FieldFileType, field.TypeEnum, value)
+		_spec.SetField(asset.FieldFileType, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.Extension(); ok {
 		_spec.SetField(asset.FieldExtension, field.TypeString, value)
@@ -394,6 +756,117 @@ func (_u *AssetUpdateOne) sqlSave(ctx context.Context) (_node *Asset, err error)
 	}
 	if value, ok := _u.mutation.StoragePath(); ok {
 		_spec.SetField(asset.FieldStoragePath, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.CreatedAt(); ok {
+		_spec.SetField(asset.FieldCreatedAt, field.TypeTime, value)
+	}
+	if value, ok := _u.mutation.IsCompressed(); ok {
+		_spec.SetField(asset.FieldIsCompressed, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.OriginalPath(); ok {
+		_spec.SetField(asset.FieldOriginalPath, field.TypeString, value)
+	}
+	if _u.mutation.OriginalPathCleared() {
+		_spec.ClearField(asset.FieldOriginalPath, field.TypeString)
+	}
+	if value, ok := _u.mutation.CompressionRatio(); ok {
+		_spec.SetField(asset.FieldCompressionRatio, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedCompressionRatio(); ok {
+		_spec.AddField(asset.FieldCompressionRatio, field.TypeFloat64, value)
+	}
+	if _u.mutation.CompressionRatioCleared() {
+		_spec.ClearField(asset.FieldCompressionRatio, field.TypeFloat64)
+	}
+	if _u.mutation.TagsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   asset.TagsTable,
+			Columns: asset.TagsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(tag.FieldID, field.TypeString),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedTagsIDs(); len(nodes) > 0 && !_u.mutation.TagsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   asset.TagsTable,
+			Columns: asset.TagsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(tag.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.TagsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   asset.TagsTable,
+			Columns: asset.TagsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(tag.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.CompressionJobsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   asset.CompressionJobsTable,
+			Columns: []string{asset.CompressionJobsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(compressionjob.FieldID, field.TypeString),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedCompressionJobsIDs(); len(nodes) > 0 && !_u.mutation.CompressionJobsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   asset.CompressionJobsTable,
+			Columns: []string{asset.CompressionJobsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(compressionjob.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.CompressionJobsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   asset.CompressionJobsTable,
+			Columns: []string{asset.CompressionJobsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(compressionjob.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	_node = &Asset{config: _u.config}
 	_spec.Assign = _node.assignValues

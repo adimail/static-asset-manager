@@ -12,7 +12,9 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/adimail/asset-manager/ent/asset"
+	"github.com/adimail/asset-manager/ent/compressionjob"
 	"github.com/adimail/asset-manager/ent/predicate"
+	"github.com/adimail/asset-manager/ent/tag"
 )
 
 const (
@@ -24,26 +26,38 @@ const (
 	OpUpdateOne = ent.OpUpdateOne
 
 	// Node types.
-	TypeAsset = "Asset"
+	TypeAsset          = "Asset"
+	TypeCompressionJob = "CompressionJob"
+	TypeTag            = "Tag"
 )
 
 // AssetMutation represents an operation that mutates the Asset nodes in the graph.
 type AssetMutation struct {
 	config
-	op                 Op
-	typ                string
-	id                 *string
-	original_filename  *string
-	file_type          *asset.FileType
-	extension          *string
-	file_size_bytes    *int64
-	addfile_size_bytes *int64
-	storage_path       *string
-	created_at         *time.Time
-	clearedFields      map[string]struct{}
-	done               bool
-	oldValue           func(context.Context) (*Asset, error)
-	predicates         []predicate.Asset
+	op                      Op
+	typ                     string
+	id                      *string
+	original_filename       *string
+	file_type               *string
+	extension               *string
+	file_size_bytes         *int64
+	addfile_size_bytes      *int64
+	storage_path            *string
+	created_at              *time.Time
+	is_compressed           *bool
+	original_path           *string
+	compression_ratio       *float64
+	addcompression_ratio    *float64
+	clearedFields           map[string]struct{}
+	tags                    map[string]struct{}
+	removedtags             map[string]struct{}
+	clearedtags             bool
+	compression_jobs        map[string]struct{}
+	removedcompression_jobs map[string]struct{}
+	clearedcompression_jobs bool
+	done                    bool
+	oldValue                func(context.Context) (*Asset, error)
+	predicates              []predicate.Asset
 }
 
 var _ ent.Mutation = (*AssetMutation)(nil)
@@ -187,12 +201,12 @@ func (m *AssetMutation) ResetOriginalFilename() {
 }
 
 // SetFileType sets the "file_type" field.
-func (m *AssetMutation) SetFileType(at asset.FileType) {
-	m.file_type = &at
+func (m *AssetMutation) SetFileType(s string) {
+	m.file_type = &s
 }
 
 // FileType returns the value of the "file_type" field in the mutation.
-func (m *AssetMutation) FileType() (r asset.FileType, exists bool) {
+func (m *AssetMutation) FileType() (r string, exists bool) {
 	v := m.file_type
 	if v == nil {
 		return
@@ -203,7 +217,7 @@ func (m *AssetMutation) FileType() (r asset.FileType, exists bool) {
 // OldFileType returns the old "file_type" field's value of the Asset entity.
 // If the Asset object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *AssetMutation) OldFileType(ctx context.Context) (v asset.FileType, err error) {
+func (m *AssetMutation) OldFileType(ctx context.Context) (v string, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldFileType is only allowed on UpdateOne operations")
 	}
@@ -386,6 +400,269 @@ func (m *AssetMutation) ResetCreatedAt() {
 	m.created_at = nil
 }
 
+// SetIsCompressed sets the "is_compressed" field.
+func (m *AssetMutation) SetIsCompressed(b bool) {
+	m.is_compressed = &b
+}
+
+// IsCompressed returns the value of the "is_compressed" field in the mutation.
+func (m *AssetMutation) IsCompressed() (r bool, exists bool) {
+	v := m.is_compressed
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldIsCompressed returns the old "is_compressed" field's value of the Asset entity.
+// If the Asset object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AssetMutation) OldIsCompressed(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldIsCompressed is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldIsCompressed requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldIsCompressed: %w", err)
+	}
+	return oldValue.IsCompressed, nil
+}
+
+// ResetIsCompressed resets all changes to the "is_compressed" field.
+func (m *AssetMutation) ResetIsCompressed() {
+	m.is_compressed = nil
+}
+
+// SetOriginalPath sets the "original_path" field.
+func (m *AssetMutation) SetOriginalPath(s string) {
+	m.original_path = &s
+}
+
+// OriginalPath returns the value of the "original_path" field in the mutation.
+func (m *AssetMutation) OriginalPath() (r string, exists bool) {
+	v := m.original_path
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldOriginalPath returns the old "original_path" field's value of the Asset entity.
+// If the Asset object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AssetMutation) OldOriginalPath(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldOriginalPath is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldOriginalPath requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldOriginalPath: %w", err)
+	}
+	return oldValue.OriginalPath, nil
+}
+
+// ClearOriginalPath clears the value of the "original_path" field.
+func (m *AssetMutation) ClearOriginalPath() {
+	m.original_path = nil
+	m.clearedFields[asset.FieldOriginalPath] = struct{}{}
+}
+
+// OriginalPathCleared returns if the "original_path" field was cleared in this mutation.
+func (m *AssetMutation) OriginalPathCleared() bool {
+	_, ok := m.clearedFields[asset.FieldOriginalPath]
+	return ok
+}
+
+// ResetOriginalPath resets all changes to the "original_path" field.
+func (m *AssetMutation) ResetOriginalPath() {
+	m.original_path = nil
+	delete(m.clearedFields, asset.FieldOriginalPath)
+}
+
+// SetCompressionRatio sets the "compression_ratio" field.
+func (m *AssetMutation) SetCompressionRatio(f float64) {
+	m.compression_ratio = &f
+	m.addcompression_ratio = nil
+}
+
+// CompressionRatio returns the value of the "compression_ratio" field in the mutation.
+func (m *AssetMutation) CompressionRatio() (r float64, exists bool) {
+	v := m.compression_ratio
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCompressionRatio returns the old "compression_ratio" field's value of the Asset entity.
+// If the Asset object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AssetMutation) OldCompressionRatio(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCompressionRatio is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCompressionRatio requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCompressionRatio: %w", err)
+	}
+	return oldValue.CompressionRatio, nil
+}
+
+// AddCompressionRatio adds f to the "compression_ratio" field.
+func (m *AssetMutation) AddCompressionRatio(f float64) {
+	if m.addcompression_ratio != nil {
+		*m.addcompression_ratio += f
+	} else {
+		m.addcompression_ratio = &f
+	}
+}
+
+// AddedCompressionRatio returns the value that was added to the "compression_ratio" field in this mutation.
+func (m *AssetMutation) AddedCompressionRatio() (r float64, exists bool) {
+	v := m.addcompression_ratio
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearCompressionRatio clears the value of the "compression_ratio" field.
+func (m *AssetMutation) ClearCompressionRatio() {
+	m.compression_ratio = nil
+	m.addcompression_ratio = nil
+	m.clearedFields[asset.FieldCompressionRatio] = struct{}{}
+}
+
+// CompressionRatioCleared returns if the "compression_ratio" field was cleared in this mutation.
+func (m *AssetMutation) CompressionRatioCleared() bool {
+	_, ok := m.clearedFields[asset.FieldCompressionRatio]
+	return ok
+}
+
+// ResetCompressionRatio resets all changes to the "compression_ratio" field.
+func (m *AssetMutation) ResetCompressionRatio() {
+	m.compression_ratio = nil
+	m.addcompression_ratio = nil
+	delete(m.clearedFields, asset.FieldCompressionRatio)
+}
+
+// AddTagIDs adds the "tags" edge to the Tag entity by ids.
+func (m *AssetMutation) AddTagIDs(ids ...string) {
+	if m.tags == nil {
+		m.tags = make(map[string]struct{})
+	}
+	for i := range ids {
+		m.tags[ids[i]] = struct{}{}
+	}
+}
+
+// ClearTags clears the "tags" edge to the Tag entity.
+func (m *AssetMutation) ClearTags() {
+	m.clearedtags = true
+}
+
+// TagsCleared reports if the "tags" edge to the Tag entity was cleared.
+func (m *AssetMutation) TagsCleared() bool {
+	return m.clearedtags
+}
+
+// RemoveTagIDs removes the "tags" edge to the Tag entity by IDs.
+func (m *AssetMutation) RemoveTagIDs(ids ...string) {
+	if m.removedtags == nil {
+		m.removedtags = make(map[string]struct{})
+	}
+	for i := range ids {
+		delete(m.tags, ids[i])
+		m.removedtags[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedTags returns the removed IDs of the "tags" edge to the Tag entity.
+func (m *AssetMutation) RemovedTagsIDs() (ids []string) {
+	for id := range m.removedtags {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// TagsIDs returns the "tags" edge IDs in the mutation.
+func (m *AssetMutation) TagsIDs() (ids []string) {
+	for id := range m.tags {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetTags resets all changes to the "tags" edge.
+func (m *AssetMutation) ResetTags() {
+	m.tags = nil
+	m.clearedtags = false
+	m.removedtags = nil
+}
+
+// AddCompressionJobIDs adds the "compression_jobs" edge to the CompressionJob entity by ids.
+func (m *AssetMutation) AddCompressionJobIDs(ids ...string) {
+	if m.compression_jobs == nil {
+		m.compression_jobs = make(map[string]struct{})
+	}
+	for i := range ids {
+		m.compression_jobs[ids[i]] = struct{}{}
+	}
+}
+
+// ClearCompressionJobs clears the "compression_jobs" edge to the CompressionJob entity.
+func (m *AssetMutation) ClearCompressionJobs() {
+	m.clearedcompression_jobs = true
+}
+
+// CompressionJobsCleared reports if the "compression_jobs" edge to the CompressionJob entity was cleared.
+func (m *AssetMutation) CompressionJobsCleared() bool {
+	return m.clearedcompression_jobs
+}
+
+// RemoveCompressionJobIDs removes the "compression_jobs" edge to the CompressionJob entity by IDs.
+func (m *AssetMutation) RemoveCompressionJobIDs(ids ...string) {
+	if m.removedcompression_jobs == nil {
+		m.removedcompression_jobs = make(map[string]struct{})
+	}
+	for i := range ids {
+		delete(m.compression_jobs, ids[i])
+		m.removedcompression_jobs[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedCompressionJobs returns the removed IDs of the "compression_jobs" edge to the CompressionJob entity.
+func (m *AssetMutation) RemovedCompressionJobsIDs() (ids []string) {
+	for id := range m.removedcompression_jobs {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// CompressionJobsIDs returns the "compression_jobs" edge IDs in the mutation.
+func (m *AssetMutation) CompressionJobsIDs() (ids []string) {
+	for id := range m.compression_jobs {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetCompressionJobs resets all changes to the "compression_jobs" edge.
+func (m *AssetMutation) ResetCompressionJobs() {
+	m.compression_jobs = nil
+	m.clearedcompression_jobs = false
+	m.removedcompression_jobs = nil
+}
+
 // Where appends a list predicates to the AssetMutation builder.
 func (m *AssetMutation) Where(ps ...predicate.Asset) {
 	m.predicates = append(m.predicates, ps...)
@@ -420,7 +697,7 @@ func (m *AssetMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *AssetMutation) Fields() []string {
-	fields := make([]string, 0, 6)
+	fields := make([]string, 0, 9)
 	if m.original_filename != nil {
 		fields = append(fields, asset.FieldOriginalFilename)
 	}
@@ -438,6 +715,15 @@ func (m *AssetMutation) Fields() []string {
 	}
 	if m.created_at != nil {
 		fields = append(fields, asset.FieldCreatedAt)
+	}
+	if m.is_compressed != nil {
+		fields = append(fields, asset.FieldIsCompressed)
+	}
+	if m.original_path != nil {
+		fields = append(fields, asset.FieldOriginalPath)
+	}
+	if m.compression_ratio != nil {
+		fields = append(fields, asset.FieldCompressionRatio)
 	}
 	return fields
 }
@@ -459,6 +745,12 @@ func (m *AssetMutation) Field(name string) (ent.Value, bool) {
 		return m.StoragePath()
 	case asset.FieldCreatedAt:
 		return m.CreatedAt()
+	case asset.FieldIsCompressed:
+		return m.IsCompressed()
+	case asset.FieldOriginalPath:
+		return m.OriginalPath()
+	case asset.FieldCompressionRatio:
+		return m.CompressionRatio()
 	}
 	return nil, false
 }
@@ -480,6 +772,12 @@ func (m *AssetMutation) OldField(ctx context.Context, name string) (ent.Value, e
 		return m.OldStoragePath(ctx)
 	case asset.FieldCreatedAt:
 		return m.OldCreatedAt(ctx)
+	case asset.FieldIsCompressed:
+		return m.OldIsCompressed(ctx)
+	case asset.FieldOriginalPath:
+		return m.OldOriginalPath(ctx)
+	case asset.FieldCompressionRatio:
+		return m.OldCompressionRatio(ctx)
 	}
 	return nil, fmt.Errorf("unknown Asset field %s", name)
 }
@@ -497,7 +795,7 @@ func (m *AssetMutation) SetField(name string, value ent.Value) error {
 		m.SetOriginalFilename(v)
 		return nil
 	case asset.FieldFileType:
-		v, ok := value.(asset.FileType)
+		v, ok := value.(string)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
@@ -531,6 +829,27 @@ func (m *AssetMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetCreatedAt(v)
 		return nil
+	case asset.FieldIsCompressed:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetIsCompressed(v)
+		return nil
+	case asset.FieldOriginalPath:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetOriginalPath(v)
+		return nil
+	case asset.FieldCompressionRatio:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCompressionRatio(v)
+		return nil
 	}
 	return fmt.Errorf("unknown Asset field %s", name)
 }
@@ -542,6 +861,9 @@ func (m *AssetMutation) AddedFields() []string {
 	if m.addfile_size_bytes != nil {
 		fields = append(fields, asset.FieldFileSizeBytes)
 	}
+	if m.addcompression_ratio != nil {
+		fields = append(fields, asset.FieldCompressionRatio)
+	}
 	return fields
 }
 
@@ -552,6 +874,8 @@ func (m *AssetMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
 	case asset.FieldFileSizeBytes:
 		return m.AddedFileSizeBytes()
+	case asset.FieldCompressionRatio:
+		return m.AddedCompressionRatio()
 	}
 	return nil, false
 }
@@ -568,6 +892,13 @@ func (m *AssetMutation) AddField(name string, value ent.Value) error {
 		}
 		m.AddFileSizeBytes(v)
 		return nil
+	case asset.FieldCompressionRatio:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddCompressionRatio(v)
+		return nil
 	}
 	return fmt.Errorf("unknown Asset numeric field %s", name)
 }
@@ -575,7 +906,14 @@ func (m *AssetMutation) AddField(name string, value ent.Value) error {
 // ClearedFields returns all nullable fields that were cleared during this
 // mutation.
 func (m *AssetMutation) ClearedFields() []string {
-	return nil
+	var fields []string
+	if m.FieldCleared(asset.FieldOriginalPath) {
+		fields = append(fields, asset.FieldOriginalPath)
+	}
+	if m.FieldCleared(asset.FieldCompressionRatio) {
+		fields = append(fields, asset.FieldCompressionRatio)
+	}
+	return fields
 }
 
 // FieldCleared returns a boolean indicating if a field with the given name was
@@ -588,6 +926,14 @@ func (m *AssetMutation) FieldCleared(name string) bool {
 // ClearField clears the value of the field with the given name. It returns an
 // error if the field is not defined in the schema.
 func (m *AssetMutation) ClearField(name string) error {
+	switch name {
+	case asset.FieldOriginalPath:
+		m.ClearOriginalPath()
+		return nil
+	case asset.FieldCompressionRatio:
+		m.ClearCompressionRatio()
+		return nil
+	}
 	return fmt.Errorf("unknown Asset nullable field %s", name)
 }
 
@@ -613,54 +959,1369 @@ func (m *AssetMutation) ResetField(name string) error {
 	case asset.FieldCreatedAt:
 		m.ResetCreatedAt()
 		return nil
+	case asset.FieldIsCompressed:
+		m.ResetIsCompressed()
+		return nil
+	case asset.FieldOriginalPath:
+		m.ResetOriginalPath()
+		return nil
+	case asset.FieldCompressionRatio:
+		m.ResetCompressionRatio()
+		return nil
 	}
 	return fmt.Errorf("unknown Asset field %s", name)
 }
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *AssetMutation) AddedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 2)
+	if m.tags != nil {
+		edges = append(edges, asset.EdgeTags)
+	}
+	if m.compression_jobs != nil {
+		edges = append(edges, asset.EdgeCompressionJobs)
+	}
 	return edges
 }
 
 // AddedIDs returns all IDs (to other nodes) that were added for the given edge
 // name in this mutation.
 func (m *AssetMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case asset.EdgeTags:
+		ids := make([]ent.Value, 0, len(m.tags))
+		for id := range m.tags {
+			ids = append(ids, id)
+		}
+		return ids
+	case asset.EdgeCompressionJobs:
+		ids := make([]ent.Value, 0, len(m.compression_jobs))
+		for id := range m.compression_jobs {
+			ids = append(ids, id)
+		}
+		return ids
+	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *AssetMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 2)
+	if m.removedtags != nil {
+		edges = append(edges, asset.EdgeTags)
+	}
+	if m.removedcompression_jobs != nil {
+		edges = append(edges, asset.EdgeCompressionJobs)
+	}
 	return edges
 }
 
 // RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
 // the given name in this mutation.
 func (m *AssetMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	case asset.EdgeTags:
+		ids := make([]ent.Value, 0, len(m.removedtags))
+		for id := range m.removedtags {
+			ids = append(ids, id)
+		}
+		return ids
+	case asset.EdgeCompressionJobs:
+		ids := make([]ent.Value, 0, len(m.removedcompression_jobs))
+		for id := range m.removedcompression_jobs {
+			ids = append(ids, id)
+		}
+		return ids
+	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *AssetMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 2)
+	if m.clearedtags {
+		edges = append(edges, asset.EdgeTags)
+	}
+	if m.clearedcompression_jobs {
+		edges = append(edges, asset.EdgeCompressionJobs)
+	}
 	return edges
 }
 
 // EdgeCleared returns a boolean which indicates if the edge with the given name
 // was cleared in this mutation.
 func (m *AssetMutation) EdgeCleared(name string) bool {
+	switch name {
+	case asset.EdgeTags:
+		return m.clearedtags
+	case asset.EdgeCompressionJobs:
+		return m.clearedcompression_jobs
+	}
 	return false
 }
 
 // ClearEdge clears the value of the edge with the given name. It returns an error
 // if that edge is not defined in the schema.
 func (m *AssetMutation) ClearEdge(name string) error {
+	switch name {
+	}
 	return fmt.Errorf("unknown Asset unique edge %s", name)
 }
 
 // ResetEdge resets all changes to the edge with the given name in this mutation.
 // It returns an error if the edge is not defined in the schema.
 func (m *AssetMutation) ResetEdge(name string) error {
+	switch name {
+	case asset.EdgeTags:
+		m.ResetTags()
+		return nil
+	case asset.EdgeCompressionJobs:
+		m.ResetCompressionJobs()
+		return nil
+	}
 	return fmt.Errorf("unknown Asset edge %s", name)
+}
+
+// CompressionJobMutation represents an operation that mutates the CompressionJob nodes in the graph.
+type CompressionJobMutation struct {
+	config
+	op            Op
+	typ           string
+	id            *string
+	status        *string
+	progress      *int
+	addprogress   *int
+	error         *string
+	started_at    *time.Time
+	completed_at  *time.Time
+	clearedFields map[string]struct{}
+	asset         *string
+	clearedasset  bool
+	done          bool
+	oldValue      func(context.Context) (*CompressionJob, error)
+	predicates    []predicate.CompressionJob
+}
+
+var _ ent.Mutation = (*CompressionJobMutation)(nil)
+
+// compressionjobOption allows management of the mutation configuration using functional options.
+type compressionjobOption func(*CompressionJobMutation)
+
+// newCompressionJobMutation creates new mutation for the CompressionJob entity.
+func newCompressionJobMutation(c config, op Op, opts ...compressionjobOption) *CompressionJobMutation {
+	m := &CompressionJobMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeCompressionJob,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withCompressionJobID sets the ID field of the mutation.
+func withCompressionJobID(id string) compressionjobOption {
+	return func(m *CompressionJobMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *CompressionJob
+		)
+		m.oldValue = func(ctx context.Context) (*CompressionJob, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().CompressionJob.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withCompressionJob sets the old CompressionJob of the mutation.
+func withCompressionJob(node *CompressionJob) compressionjobOption {
+	return func(m *CompressionJobMutation) {
+		m.oldValue = func(context.Context) (*CompressionJob, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m CompressionJobMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m CompressionJobMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of CompressionJob entities.
+func (m *CompressionJobMutation) SetID(id string) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *CompressionJobMutation) ID() (id string, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *CompressionJobMutation) IDs(ctx context.Context) ([]string, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []string{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().CompressionJob.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetStatus sets the "status" field.
+func (m *CompressionJobMutation) SetStatus(s string) {
+	m.status = &s
+}
+
+// Status returns the value of the "status" field in the mutation.
+func (m *CompressionJobMutation) Status() (r string, exists bool) {
+	v := m.status
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStatus returns the old "status" field's value of the CompressionJob entity.
+// If the CompressionJob object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CompressionJobMutation) OldStatus(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStatus is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStatus requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStatus: %w", err)
+	}
+	return oldValue.Status, nil
+}
+
+// ResetStatus resets all changes to the "status" field.
+func (m *CompressionJobMutation) ResetStatus() {
+	m.status = nil
+}
+
+// SetProgress sets the "progress" field.
+func (m *CompressionJobMutation) SetProgress(i int) {
+	m.progress = &i
+	m.addprogress = nil
+}
+
+// Progress returns the value of the "progress" field in the mutation.
+func (m *CompressionJobMutation) Progress() (r int, exists bool) {
+	v := m.progress
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldProgress returns the old "progress" field's value of the CompressionJob entity.
+// If the CompressionJob object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CompressionJobMutation) OldProgress(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldProgress is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldProgress requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldProgress: %w", err)
+	}
+	return oldValue.Progress, nil
+}
+
+// AddProgress adds i to the "progress" field.
+func (m *CompressionJobMutation) AddProgress(i int) {
+	if m.addprogress != nil {
+		*m.addprogress += i
+	} else {
+		m.addprogress = &i
+	}
+}
+
+// AddedProgress returns the value that was added to the "progress" field in this mutation.
+func (m *CompressionJobMutation) AddedProgress() (r int, exists bool) {
+	v := m.addprogress
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetProgress resets all changes to the "progress" field.
+func (m *CompressionJobMutation) ResetProgress() {
+	m.progress = nil
+	m.addprogress = nil
+}
+
+// SetError sets the "error" field.
+func (m *CompressionJobMutation) SetError(s string) {
+	m.error = &s
+}
+
+// Error returns the value of the "error" field in the mutation.
+func (m *CompressionJobMutation) Error() (r string, exists bool) {
+	v := m.error
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldError returns the old "error" field's value of the CompressionJob entity.
+// If the CompressionJob object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CompressionJobMutation) OldError(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldError is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldError requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldError: %w", err)
+	}
+	return oldValue.Error, nil
+}
+
+// ClearError clears the value of the "error" field.
+func (m *CompressionJobMutation) ClearError() {
+	m.error = nil
+	m.clearedFields[compressionjob.FieldError] = struct{}{}
+}
+
+// ErrorCleared returns if the "error" field was cleared in this mutation.
+func (m *CompressionJobMutation) ErrorCleared() bool {
+	_, ok := m.clearedFields[compressionjob.FieldError]
+	return ok
+}
+
+// ResetError resets all changes to the "error" field.
+func (m *CompressionJobMutation) ResetError() {
+	m.error = nil
+	delete(m.clearedFields, compressionjob.FieldError)
+}
+
+// SetStartedAt sets the "started_at" field.
+func (m *CompressionJobMutation) SetStartedAt(t time.Time) {
+	m.started_at = &t
+}
+
+// StartedAt returns the value of the "started_at" field in the mutation.
+func (m *CompressionJobMutation) StartedAt() (r time.Time, exists bool) {
+	v := m.started_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStartedAt returns the old "started_at" field's value of the CompressionJob entity.
+// If the CompressionJob object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CompressionJobMutation) OldStartedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStartedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStartedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStartedAt: %w", err)
+	}
+	return oldValue.StartedAt, nil
+}
+
+// ClearStartedAt clears the value of the "started_at" field.
+func (m *CompressionJobMutation) ClearStartedAt() {
+	m.started_at = nil
+	m.clearedFields[compressionjob.FieldStartedAt] = struct{}{}
+}
+
+// StartedAtCleared returns if the "started_at" field was cleared in this mutation.
+func (m *CompressionJobMutation) StartedAtCleared() bool {
+	_, ok := m.clearedFields[compressionjob.FieldStartedAt]
+	return ok
+}
+
+// ResetStartedAt resets all changes to the "started_at" field.
+func (m *CompressionJobMutation) ResetStartedAt() {
+	m.started_at = nil
+	delete(m.clearedFields, compressionjob.FieldStartedAt)
+}
+
+// SetCompletedAt sets the "completed_at" field.
+func (m *CompressionJobMutation) SetCompletedAt(t time.Time) {
+	m.completed_at = &t
+}
+
+// CompletedAt returns the value of the "completed_at" field in the mutation.
+func (m *CompressionJobMutation) CompletedAt() (r time.Time, exists bool) {
+	v := m.completed_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCompletedAt returns the old "completed_at" field's value of the CompressionJob entity.
+// If the CompressionJob object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CompressionJobMutation) OldCompletedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCompletedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCompletedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCompletedAt: %w", err)
+	}
+	return oldValue.CompletedAt, nil
+}
+
+// ClearCompletedAt clears the value of the "completed_at" field.
+func (m *CompressionJobMutation) ClearCompletedAt() {
+	m.completed_at = nil
+	m.clearedFields[compressionjob.FieldCompletedAt] = struct{}{}
+}
+
+// CompletedAtCleared returns if the "completed_at" field was cleared in this mutation.
+func (m *CompressionJobMutation) CompletedAtCleared() bool {
+	_, ok := m.clearedFields[compressionjob.FieldCompletedAt]
+	return ok
+}
+
+// ResetCompletedAt resets all changes to the "completed_at" field.
+func (m *CompressionJobMutation) ResetCompletedAt() {
+	m.completed_at = nil
+	delete(m.clearedFields, compressionjob.FieldCompletedAt)
+}
+
+// SetAssetID sets the "asset" edge to the Asset entity by id.
+func (m *CompressionJobMutation) SetAssetID(id string) {
+	m.asset = &id
+}
+
+// ClearAsset clears the "asset" edge to the Asset entity.
+func (m *CompressionJobMutation) ClearAsset() {
+	m.clearedasset = true
+}
+
+// AssetCleared reports if the "asset" edge to the Asset entity was cleared.
+func (m *CompressionJobMutation) AssetCleared() bool {
+	return m.clearedasset
+}
+
+// AssetID returns the "asset" edge ID in the mutation.
+func (m *CompressionJobMutation) AssetID() (id string, exists bool) {
+	if m.asset != nil {
+		return *m.asset, true
+	}
+	return
+}
+
+// AssetIDs returns the "asset" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// AssetID instead. It exists only for internal usage by the builders.
+func (m *CompressionJobMutation) AssetIDs() (ids []string) {
+	if id := m.asset; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetAsset resets all changes to the "asset" edge.
+func (m *CompressionJobMutation) ResetAsset() {
+	m.asset = nil
+	m.clearedasset = false
+}
+
+// Where appends a list predicates to the CompressionJobMutation builder.
+func (m *CompressionJobMutation) Where(ps ...predicate.CompressionJob) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the CompressionJobMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *CompressionJobMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.CompressionJob, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *CompressionJobMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *CompressionJobMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (CompressionJob).
+func (m *CompressionJobMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *CompressionJobMutation) Fields() []string {
+	fields := make([]string, 0, 5)
+	if m.status != nil {
+		fields = append(fields, compressionjob.FieldStatus)
+	}
+	if m.progress != nil {
+		fields = append(fields, compressionjob.FieldProgress)
+	}
+	if m.error != nil {
+		fields = append(fields, compressionjob.FieldError)
+	}
+	if m.started_at != nil {
+		fields = append(fields, compressionjob.FieldStartedAt)
+	}
+	if m.completed_at != nil {
+		fields = append(fields, compressionjob.FieldCompletedAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *CompressionJobMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case compressionjob.FieldStatus:
+		return m.Status()
+	case compressionjob.FieldProgress:
+		return m.Progress()
+	case compressionjob.FieldError:
+		return m.Error()
+	case compressionjob.FieldStartedAt:
+		return m.StartedAt()
+	case compressionjob.FieldCompletedAt:
+		return m.CompletedAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *CompressionJobMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case compressionjob.FieldStatus:
+		return m.OldStatus(ctx)
+	case compressionjob.FieldProgress:
+		return m.OldProgress(ctx)
+	case compressionjob.FieldError:
+		return m.OldError(ctx)
+	case compressionjob.FieldStartedAt:
+		return m.OldStartedAt(ctx)
+	case compressionjob.FieldCompletedAt:
+		return m.OldCompletedAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown CompressionJob field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *CompressionJobMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case compressionjob.FieldStatus:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStatus(v)
+		return nil
+	case compressionjob.FieldProgress:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetProgress(v)
+		return nil
+	case compressionjob.FieldError:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetError(v)
+		return nil
+	case compressionjob.FieldStartedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStartedAt(v)
+		return nil
+	case compressionjob.FieldCompletedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCompletedAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown CompressionJob field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *CompressionJobMutation) AddedFields() []string {
+	var fields []string
+	if m.addprogress != nil {
+		fields = append(fields, compressionjob.FieldProgress)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *CompressionJobMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case compressionjob.FieldProgress:
+		return m.AddedProgress()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *CompressionJobMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case compressionjob.FieldProgress:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddProgress(v)
+		return nil
+	}
+	return fmt.Errorf("unknown CompressionJob numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *CompressionJobMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(compressionjob.FieldError) {
+		fields = append(fields, compressionjob.FieldError)
+	}
+	if m.FieldCleared(compressionjob.FieldStartedAt) {
+		fields = append(fields, compressionjob.FieldStartedAt)
+	}
+	if m.FieldCleared(compressionjob.FieldCompletedAt) {
+		fields = append(fields, compressionjob.FieldCompletedAt)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *CompressionJobMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *CompressionJobMutation) ClearField(name string) error {
+	switch name {
+	case compressionjob.FieldError:
+		m.ClearError()
+		return nil
+	case compressionjob.FieldStartedAt:
+		m.ClearStartedAt()
+		return nil
+	case compressionjob.FieldCompletedAt:
+		m.ClearCompletedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown CompressionJob nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *CompressionJobMutation) ResetField(name string) error {
+	switch name {
+	case compressionjob.FieldStatus:
+		m.ResetStatus()
+		return nil
+	case compressionjob.FieldProgress:
+		m.ResetProgress()
+		return nil
+	case compressionjob.FieldError:
+		m.ResetError()
+		return nil
+	case compressionjob.FieldStartedAt:
+		m.ResetStartedAt()
+		return nil
+	case compressionjob.FieldCompletedAt:
+		m.ResetCompletedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown CompressionJob field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *CompressionJobMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.asset != nil {
+		edges = append(edges, compressionjob.EdgeAsset)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *CompressionJobMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case compressionjob.EdgeAsset:
+		if id := m.asset; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *CompressionJobMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *CompressionJobMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *CompressionJobMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.clearedasset {
+		edges = append(edges, compressionjob.EdgeAsset)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *CompressionJobMutation) EdgeCleared(name string) bool {
+	switch name {
+	case compressionjob.EdgeAsset:
+		return m.clearedasset
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *CompressionJobMutation) ClearEdge(name string) error {
+	switch name {
+	case compressionjob.EdgeAsset:
+		m.ClearAsset()
+		return nil
+	}
+	return fmt.Errorf("unknown CompressionJob unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *CompressionJobMutation) ResetEdge(name string) error {
+	switch name {
+	case compressionjob.EdgeAsset:
+		m.ResetAsset()
+		return nil
+	}
+	return fmt.Errorf("unknown CompressionJob edge %s", name)
+}
+
+// TagMutation represents an operation that mutates the Tag nodes in the graph.
+type TagMutation struct {
+	config
+	op            Op
+	typ           string
+	id            *string
+	name          *string
+	color         *string
+	created_at    *time.Time
+	clearedFields map[string]struct{}
+	assets        map[string]struct{}
+	removedassets map[string]struct{}
+	clearedassets bool
+	done          bool
+	oldValue      func(context.Context) (*Tag, error)
+	predicates    []predicate.Tag
+}
+
+var _ ent.Mutation = (*TagMutation)(nil)
+
+// tagOption allows management of the mutation configuration using functional options.
+type tagOption func(*TagMutation)
+
+// newTagMutation creates new mutation for the Tag entity.
+func newTagMutation(c config, op Op, opts ...tagOption) *TagMutation {
+	m := &TagMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeTag,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withTagID sets the ID field of the mutation.
+func withTagID(id string) tagOption {
+	return func(m *TagMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *Tag
+		)
+		m.oldValue = func(ctx context.Context) (*Tag, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().Tag.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withTag sets the old Tag of the mutation.
+func withTag(node *Tag) tagOption {
+	return func(m *TagMutation) {
+		m.oldValue = func(context.Context) (*Tag, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m TagMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m TagMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of Tag entities.
+func (m *TagMutation) SetID(id string) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *TagMutation) ID() (id string, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *TagMutation) IDs(ctx context.Context) ([]string, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []string{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().Tag.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetName sets the "name" field.
+func (m *TagMutation) SetName(s string) {
+	m.name = &s
+}
+
+// Name returns the value of the "name" field in the mutation.
+func (m *TagMutation) Name() (r string, exists bool) {
+	v := m.name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldName returns the old "name" field's value of the Tag entity.
+// If the Tag object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TagMutation) OldName(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldName: %w", err)
+	}
+	return oldValue.Name, nil
+}
+
+// ResetName resets all changes to the "name" field.
+func (m *TagMutation) ResetName() {
+	m.name = nil
+}
+
+// SetColor sets the "color" field.
+func (m *TagMutation) SetColor(s string) {
+	m.color = &s
+}
+
+// Color returns the value of the "color" field in the mutation.
+func (m *TagMutation) Color() (r string, exists bool) {
+	v := m.color
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldColor returns the old "color" field's value of the Tag entity.
+// If the Tag object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TagMutation) OldColor(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldColor is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldColor requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldColor: %w", err)
+	}
+	return oldValue.Color, nil
+}
+
+// ResetColor resets all changes to the "color" field.
+func (m *TagMutation) ResetColor() {
+	m.color = nil
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *TagMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *TagMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the Tag entity.
+// If the Tag object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TagMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *TagMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// AddAssetIDs adds the "assets" edge to the Asset entity by ids.
+func (m *TagMutation) AddAssetIDs(ids ...string) {
+	if m.assets == nil {
+		m.assets = make(map[string]struct{})
+	}
+	for i := range ids {
+		m.assets[ids[i]] = struct{}{}
+	}
+}
+
+// ClearAssets clears the "assets" edge to the Asset entity.
+func (m *TagMutation) ClearAssets() {
+	m.clearedassets = true
+}
+
+// AssetsCleared reports if the "assets" edge to the Asset entity was cleared.
+func (m *TagMutation) AssetsCleared() bool {
+	return m.clearedassets
+}
+
+// RemoveAssetIDs removes the "assets" edge to the Asset entity by IDs.
+func (m *TagMutation) RemoveAssetIDs(ids ...string) {
+	if m.removedassets == nil {
+		m.removedassets = make(map[string]struct{})
+	}
+	for i := range ids {
+		delete(m.assets, ids[i])
+		m.removedassets[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedAssets returns the removed IDs of the "assets" edge to the Asset entity.
+func (m *TagMutation) RemovedAssetsIDs() (ids []string) {
+	for id := range m.removedassets {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// AssetsIDs returns the "assets" edge IDs in the mutation.
+func (m *TagMutation) AssetsIDs() (ids []string) {
+	for id := range m.assets {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetAssets resets all changes to the "assets" edge.
+func (m *TagMutation) ResetAssets() {
+	m.assets = nil
+	m.clearedassets = false
+	m.removedassets = nil
+}
+
+// Where appends a list predicates to the TagMutation builder.
+func (m *TagMutation) Where(ps ...predicate.Tag) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the TagMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *TagMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.Tag, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *TagMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *TagMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (Tag).
+func (m *TagMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *TagMutation) Fields() []string {
+	fields := make([]string, 0, 3)
+	if m.name != nil {
+		fields = append(fields, tag.FieldName)
+	}
+	if m.color != nil {
+		fields = append(fields, tag.FieldColor)
+	}
+	if m.created_at != nil {
+		fields = append(fields, tag.FieldCreatedAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *TagMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case tag.FieldName:
+		return m.Name()
+	case tag.FieldColor:
+		return m.Color()
+	case tag.FieldCreatedAt:
+		return m.CreatedAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *TagMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case tag.FieldName:
+		return m.OldName(ctx)
+	case tag.FieldColor:
+		return m.OldColor(ctx)
+	case tag.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown Tag field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *TagMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case tag.FieldName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetName(v)
+		return nil
+	case tag.FieldColor:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetColor(v)
+		return nil
+	case tag.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown Tag field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *TagMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *TagMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *TagMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown Tag numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *TagMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *TagMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *TagMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown Tag nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *TagMutation) ResetField(name string) error {
+	switch name {
+	case tag.FieldName:
+		m.ResetName()
+		return nil
+	case tag.FieldColor:
+		m.ResetColor()
+		return nil
+	case tag.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown Tag field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *TagMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.assets != nil {
+		edges = append(edges, tag.EdgeAssets)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *TagMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case tag.EdgeAssets:
+		ids := make([]ent.Value, 0, len(m.assets))
+		for id := range m.assets {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *TagMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.removedassets != nil {
+		edges = append(edges, tag.EdgeAssets)
+	}
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *TagMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	case tag.EdgeAssets:
+		ids := make([]ent.Value, 0, len(m.removedassets))
+		for id := range m.removedassets {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *TagMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.clearedassets {
+		edges = append(edges, tag.EdgeAssets)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *TagMutation) EdgeCleared(name string) bool {
+	switch name {
+	case tag.EdgeAssets:
+		return m.clearedassets
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *TagMutation) ClearEdge(name string) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown Tag unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *TagMutation) ResetEdge(name string) error {
+	switch name {
+	case tag.EdgeAssets:
+		m.ResetAssets()
+		return nil
+	}
+	return fmt.Errorf("unknown Tag edge %s", name)
 }

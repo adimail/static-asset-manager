@@ -3,10 +3,10 @@
 package asset
 
 import (
-	"fmt"
 	"time"
 
 	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
 )
 
 const (
@@ -26,8 +26,30 @@ const (
 	FieldStoragePath = "storage_path"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
 	FieldCreatedAt = "created_at"
+	// FieldIsCompressed holds the string denoting the is_compressed field in the database.
+	FieldIsCompressed = "is_compressed"
+	// FieldOriginalPath holds the string denoting the original_path field in the database.
+	FieldOriginalPath = "original_path"
+	// FieldCompressionRatio holds the string denoting the compression_ratio field in the database.
+	FieldCompressionRatio = "compression_ratio"
+	// EdgeTags holds the string denoting the tags edge name in mutations.
+	EdgeTags = "tags"
+	// EdgeCompressionJobs holds the string denoting the compression_jobs edge name in mutations.
+	EdgeCompressionJobs = "compression_jobs"
 	// Table holds the table name of the asset in the database.
 	Table = "assets"
+	// TagsTable is the table that holds the tags relation/edge. The primary key declared below.
+	TagsTable = "asset_tags"
+	// TagsInverseTable is the table name for the Tag entity.
+	// It exists in this package in order to avoid circular dependency with the "tag" package.
+	TagsInverseTable = "tags"
+	// CompressionJobsTable is the table that holds the compression_jobs relation/edge.
+	CompressionJobsTable = "compression_jobs"
+	// CompressionJobsInverseTable is the table name for the CompressionJob entity.
+	// It exists in this package in order to avoid circular dependency with the "compressionjob" package.
+	CompressionJobsInverseTable = "compression_jobs"
+	// CompressionJobsColumn is the table column denoting the compression_jobs relation/edge.
+	CompressionJobsColumn = "asset_compression_jobs"
 )
 
 // Columns holds all SQL columns for asset fields.
@@ -39,7 +61,16 @@ var Columns = []string{
 	FieldFileSizeBytes,
 	FieldStoragePath,
 	FieldCreatedAt,
+	FieldIsCompressed,
+	FieldOriginalPath,
+	FieldCompressionRatio,
 }
+
+var (
+	// TagsPrimaryKey and TagsColumn2 are the table columns denoting the
+	// primary key for the tags relation (M2M).
+	TagsPrimaryKey = []string{"asset_id", "tag_id"}
+)
 
 // ValidColumn reports if the column name is valid (part of the table columns).
 func ValidColumn(column string) bool {
@@ -52,39 +83,13 @@ func ValidColumn(column string) bool {
 }
 
 var (
-	// OriginalFilenameValidator is a validator for the "original_filename" field. It is called by the builders before save.
-	OriginalFilenameValidator func(string) error
-	// FileSizeBytesValidator is a validator for the "file_size_bytes" field. It is called by the builders before save.
-	FileSizeBytesValidator func(int64) error
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
 	DefaultCreatedAt func() time.Time
+	// DefaultIsCompressed holds the default value on creation for the "is_compressed" field.
+	DefaultIsCompressed bool
+	// DefaultID holds the default value on creation for the "id" field.
+	DefaultID func() string
 )
-
-// FileType defines the type for the "file_type" enum field.
-type FileType string
-
-// FileType values.
-const (
-	FileTypeImage    FileType = "image"
-	FileTypeDocument FileType = "document"
-	FileTypeAudio    FileType = "audio"
-	FileTypeVideo    FileType = "video"
-	FileTypeOther    FileType = "other"
-)
-
-func (ft FileType) String() string {
-	return string(ft)
-}
-
-// FileTypeValidator is a validator for the "file_type" field enum values. It is called by the builders before save.
-func FileTypeValidator(ft FileType) error {
-	switch ft {
-	case FileTypeImage, FileTypeDocument, FileTypeAudio, FileTypeVideo, FileTypeOther:
-		return nil
-	default:
-		return fmt.Errorf("asset: invalid enum value for file_type field: %q", ft)
-	}
-}
 
 // OrderOption defines the ordering options for the Asset queries.
 type OrderOption func(*sql.Selector)
@@ -122,4 +127,61 @@ func ByStoragePath(opts ...sql.OrderTermOption) OrderOption {
 // ByCreatedAt orders the results by the created_at field.
 func ByCreatedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldCreatedAt, opts...).ToFunc()
+}
+
+// ByIsCompressed orders the results by the is_compressed field.
+func ByIsCompressed(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldIsCompressed, opts...).ToFunc()
+}
+
+// ByOriginalPath orders the results by the original_path field.
+func ByOriginalPath(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldOriginalPath, opts...).ToFunc()
+}
+
+// ByCompressionRatio orders the results by the compression_ratio field.
+func ByCompressionRatio(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCompressionRatio, opts...).ToFunc()
+}
+
+// ByTagsCount orders the results by tags count.
+func ByTagsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newTagsStep(), opts...)
+	}
+}
+
+// ByTags orders the results by tags terms.
+func ByTags(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newTagsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
+// ByCompressionJobsCount orders the results by compression_jobs count.
+func ByCompressionJobsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newCompressionJobsStep(), opts...)
+	}
+}
+
+// ByCompressionJobs orders the results by compression_jobs terms.
+func ByCompressionJobs(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newCompressionJobsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+func newTagsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(TagsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2M, false, TagsTable, TagsPrimaryKey...),
+	)
+}
+func newCompressionJobsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(CompressionJobsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, CompressionJobsTable, CompressionJobsColumn),
+	)
 }

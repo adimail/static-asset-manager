@@ -25,3 +25,15 @@ export function useDeleteAsset() {
     },
   });
 }
+
+export function useBulkDeleteAssets() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (ids: string[]) => {
+      await api.post("/assets/bulk/delete", { ids });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["assets"] });
+    },
+  });
+}

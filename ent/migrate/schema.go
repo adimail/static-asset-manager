@@ -12,35 +12,94 @@ var (
 	AssetsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeString},
 		{Name: "original_filename", Type: field.TypeString},
-		{Name: "file_type", Type: field.TypeEnum, Enums: []string{"image", "document", "audio", "video", "other"}},
+		{Name: "file_type", Type: field.TypeString},
 		{Name: "extension", Type: field.TypeString},
 		{Name: "file_size_bytes", Type: field.TypeInt64},
 		{Name: "storage_path", Type: field.TypeString},
 		{Name: "created_at", Type: field.TypeTime},
+		{Name: "is_compressed", Type: field.TypeBool, Default: false},
+		{Name: "original_path", Type: field.TypeString, Nullable: true},
+		{Name: "compression_ratio", Type: field.TypeFloat64, Nullable: true},
 	}
 	// AssetsTable holds the schema information for the "assets" table.
 	AssetsTable = &schema.Table{
 		Name:       "assets",
 		Columns:    AssetsColumns,
 		PrimaryKey: []*schema.Column{AssetsColumns[0]},
-		Indexes: []*schema.Index{
+	}
+	// CompressionJobsColumns holds the columns for the "compression_jobs" table.
+	CompressionJobsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeString},
+		{Name: "status", Type: field.TypeString, Default: "pending"},
+		{Name: "progress", Type: field.TypeInt, Default: 0},
+		{Name: "error", Type: field.TypeString, Nullable: true},
+		{Name: "started_at", Type: field.TypeTime, Nullable: true},
+		{Name: "completed_at", Type: field.TypeTime, Nullable: true},
+		{Name: "asset_compression_jobs", Type: field.TypeString},
+	}
+	// CompressionJobsTable holds the schema information for the "compression_jobs" table.
+	CompressionJobsTable = &schema.Table{
+		Name:       "compression_jobs",
+		Columns:    CompressionJobsColumns,
+		PrimaryKey: []*schema.Column{CompressionJobsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
 			{
-				Name:    "asset_created_at",
-				Unique:  false,
-				Columns: []*schema.Column{AssetsColumns[6]},
+				Symbol:     "compression_jobs_assets_compression_jobs",
+				Columns:    []*schema.Column{CompressionJobsColumns[6]},
+				RefColumns: []*schema.Column{AssetsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+	}
+	// TagsColumns holds the columns for the "tags" table.
+	TagsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeString},
+		{Name: "name", Type: field.TypeString, Unique: true},
+		{Name: "color", Type: field.TypeString, Default: "#3B82F6"},
+		{Name: "created_at", Type: field.TypeTime},
+	}
+	// TagsTable holds the schema information for the "tags" table.
+	TagsTable = &schema.Table{
+		Name:       "tags",
+		Columns:    TagsColumns,
+		PrimaryKey: []*schema.Column{TagsColumns[0]},
+	}
+	// AssetTagsColumns holds the columns for the "asset_tags" table.
+	AssetTagsColumns = []*schema.Column{
+		{Name: "asset_id", Type: field.TypeString},
+		{Name: "tag_id", Type: field.TypeString},
+	}
+	// AssetTagsTable holds the schema information for the "asset_tags" table.
+	AssetTagsTable = &schema.Table{
+		Name:       "asset_tags",
+		Columns:    AssetTagsColumns,
+		PrimaryKey: []*schema.Column{AssetTagsColumns[0], AssetTagsColumns[1]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "asset_tags_asset_id",
+				Columns:    []*schema.Column{AssetTagsColumns[0]},
+				RefColumns: []*schema.Column{AssetsColumns[0]},
+				OnDelete:   schema.Cascade,
 			},
 			{
-				Name:    "asset_file_type",
-				Unique:  false,
-				Columns: []*schema.Column{AssetsColumns[2]},
+				Symbol:     "asset_tags_tag_id",
+				Columns:    []*schema.Column{AssetTagsColumns[1]},
+				RefColumns: []*schema.Column{TagsColumns[0]},
+				OnDelete:   schema.Cascade,
 			},
 		},
 	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
 		AssetsTable,
+		CompressionJobsTable,
+		TagsTable,
+		AssetTagsTable,
 	}
 )
 
 func init() {
+	CompressionJobsTable.ForeignKeys[0].RefTable = AssetsTable
+	AssetTagsTable.ForeignKeys[0].RefTable = AssetsTable
+	AssetTagsTable.ForeignKeys[1].RefTable = TagsTable
 }

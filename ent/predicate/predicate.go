@@ -8,3 +8,9 @@ import (
 
 // Asset is the predicate function for asset builders.
 type Asset func(*sql.Selector)
+
+// CompressionJob is the predicate function for compressionjob builders.
+type CompressionJob func(*sql.Selector)
+
+// Tag is the predicate function for tag builders.
+type Tag func(*sql.Selector)

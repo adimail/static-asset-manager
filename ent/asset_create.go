@@ -11,6 +11,8 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/adimail/asset-manager/ent/asset"
+	"github.com/adimail/asset-manager/ent/compressionjob"
+	"github.com/adimail/asset-manager/ent/tag"
 )
 
 // AssetCreate is the builder for creating a Asset entity.
@@ -27,7 +29,7 @@ func (_c *AssetCreate) SetOriginalFilename(v string) *AssetCreate {
 }
 
 // SetFileType sets the "file_type" field.
-func (_c *AssetCreate) SetFileType(v asset.FileType) *AssetCreate {
+func (_c *AssetCreate) SetFileType(v string) *AssetCreate {
 	_c.mutation.SetFileType(v)
 	return _c
 }
@@ -64,10 +66,90 @@ func (_c *AssetCreate) SetNillableCreatedAt(v *time.Time) *AssetCreate {
 	return _c
 }
 
+// SetIsCompressed sets the "is_compressed" field.
+func (_c *AssetCreate) SetIsCompressed(v bool) *AssetCreate {
+	_c.mutation.SetIsCompressed(v)
+	return _c
+}
+
+// SetNillableIsCompressed sets the "is_compressed" field if the given value is not nil.
+func (_c *AssetCreate) SetNillableIsCompressed(v *bool) *AssetCreate {
+	if v != nil {
+		_c.SetIsCompressed(*v)
+	}
+	return _c
+}
+
+// SetOriginalPath sets the "original_path" field.
+func (_c *AssetCreate) SetOriginalPath(v string) *AssetCreate {
+	_c.mutation.SetOriginalPath(v)
+	return _c
+}
+
+// SetNillableOriginalPath sets the "original_path" field if the given value is not nil.
+func (_c *AssetCreate) SetNillableOriginalPath(v *string) *AssetCreate {
+	if v != nil {
+		_c.SetOriginalPath(*v)
+	}
+	return _c
+}
+
+// SetCompressionRatio sets the "compression_ratio" field.
+func (_c *AssetCreate) SetCompressionRatio(v float64) *AssetCreate {
+	_c.mutation.SetCompressionRatio(v)
+	return _c
+}
+
+// SetNillableCompressionRatio sets the "compression_ratio" field if the given value is not nil.
+func (_c *AssetCreate) SetNillableCompressionRatio(v *float64) *AssetCreate {
+	if v != nil {
+		_c.SetCompressionRatio(*v)
+	}
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *AssetCreate) SetID(v string) *AssetCreate {
 	_c.mutation.SetID(v)
 	return _c
+}
+
+// SetNillableID sets the "id" field if the given value is not nil.
+func (_c *AssetCreate) SetNillableID(v *string) *AssetCreate {
+	if v != nil {
+		_c.SetID(*v)
+	}
+	return _c
+}
+
+// AddTagIDs adds the "tags" edge to the Tag entity by IDs.
+func (_c *AssetCreate) AddTagIDs(ids ...string) *AssetCreate {
+	_c.mutation.AddTagIDs(ids...)
+	return _c
+}
+
+// AddTags adds the "tags" edges to the Tag entity.
+func (_c *AssetCreate) AddTags(v ...*Tag) *AssetCreate {
+	ids := make([]string, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddTagIDs(ids...)
+}
+
+// AddCompressionJobIDs adds the "compression_jobs" edge to the CompressionJob entity by IDs.
+func (_c *AssetCreate) AddCompressionJobIDs(ids ...string) *AssetCreate {
+	_c.mutation.AddCompressionJobIDs(ids...)
+	return _c
+}
+
+// AddCompressionJobs adds the "compression_jobs" edges to the CompressionJob entity.
+func (_c *AssetCreate) AddCompressionJobs(v ...*CompressionJob) *AssetCreate {
+	ids := make([]string, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddCompressionJobIDs(ids...)
 }
 
 // Mutation returns the AssetMutation object of the builder.
@@ -109,6 +191,14 @@ func (_c *AssetCreate) defaults() {
 		v := asset.DefaultCreatedAt()
 		_c.mutation.SetCreatedAt(v)
 	}
+	if _, ok := _c.mutation.IsCompressed(); !ok {
+		v := asset.DefaultIsCompressed
+		_c.mutation.SetIsCompressed(v)
+	}
+	if _, ok := _c.mutation.ID(); !ok {
+		v := asset.DefaultID()
+		_c.mutation.SetID(v)
+	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -116,18 +206,8 @@ func (_c *AssetCreate) check() error {
 	if _, ok := _c.mutation.OriginalFilename(); !ok {
 		return &ValidationError{Name: "original_filename", err: errors.New(`ent: missing required field "Asset.original_filename"`)}
 	}
-	if v, ok := _c.mutation.OriginalFilename(); ok {
-		if err := asset.OriginalFilenameValidator(v); err != nil {
-			return &ValidationError{Name: "original_filename", err: fmt.Errorf(`ent: validator failed for field "Asset.original_filename": %w`, err)}
-		}
-	}
 	if _, ok := _c.mutation.FileType(); !ok {
 		return &ValidationError{Name: "file_type", err: errors.New(`ent: missing required field "Asset.file_type"`)}
-	}
-	if v, ok := _c.mutation.FileType(); ok {
-		if err := asset.FileTypeValidator(v); err != nil {
-			return &ValidationError{Name: "file_type", err: fmt.Errorf(`ent: validator failed for field "Asset.file_type": %w`, err)}
-		}
 	}
 	if _, ok := _c.mutation.Extension(); !ok {
 		return &ValidationError{Name: "extension", err: errors.New(`ent: missing required field "Asset.extension"`)}
@@ -135,16 +215,14 @@ func (_c *AssetCreate) check() error {
 	if _, ok := _c.mutation.FileSizeBytes(); !ok {
 		return &ValidationError{Name: "file_size_bytes", err: errors.New(`ent: missing required field "Asset.file_size_bytes"`)}
 	}
-	if v, ok := _c.mutation.FileSizeBytes(); ok {
-		if err := asset.FileSizeBytesValidator(v); err != nil {
-			return &ValidationError{Name: "file_size_bytes", err: fmt.Errorf(`ent: validator failed for field "Asset.file_size_bytes": %w`, err)}
-		}
-	}
 	if _, ok := _c.mutation.StoragePath(); !ok {
 		return &ValidationError{Name: "storage_path", err: errors.New(`ent: missing required field "Asset.storage_path"`)}
 	}
 	if _, ok := _c.mutation.CreatedAt(); !ok {
 		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "Asset.created_at"`)}
+	}
+	if _, ok := _c.mutation.IsCompressed(); !ok {
+		return &ValidationError{Name: "is_compressed", err: errors.New(`ent: missing required field "Asset.is_compressed"`)}
 	}
 	return nil
 }
@@ -186,7 +264,7 @@ func (_c *AssetCreate) createSpec() (*Asset, *sqlgraph.CreateSpec) {
 		_node.OriginalFilename = value
 	}
 	if value, ok := _c.mutation.FileType(); ok {
-		_spec.SetField(asset.FieldFileType, field.TypeEnum, value)
+		_spec.SetField(asset.FieldFileType, field.TypeString, value)
 		_node.FileType = value
 	}
 	if value, ok := _c.mutation.Extension(); ok {
@@ -204,6 +282,50 @@ func (_c *AssetCreate) createSpec() (*Asset, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.CreatedAt(); ok {
 		_spec.SetField(asset.FieldCreatedAt, field.TypeTime, value)
 		_node.CreatedAt = value
+	}
+	if value, ok := _c.mutation.IsCompressed(); ok {
+		_spec.SetField(asset.FieldIsCompressed, field.TypeBool, value)
+		_node.IsCompressed = value
+	}
+	if value, ok := _c.mutation.OriginalPath(); ok {
+		_spec.SetField(asset.FieldOriginalPath, field.TypeString, value)
+		_node.OriginalPath = value
+	}
+	if value, ok := _c.mutation.CompressionRatio(); ok {
+		_spec.SetField(asset.FieldCompressionRatio, field.TypeFloat64, value)
+		_node.CompressionRatio = value
+	}
+	if nodes := _c.mutation.TagsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   asset.TagsTable,
+			Columns: asset.TagsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(tag.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.CompressionJobsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   asset.CompressionJobsTable,
+			Columns: []string{asset.CompressionJobsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(compressionjob.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
 }

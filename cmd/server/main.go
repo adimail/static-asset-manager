@@ -15,6 +15,8 @@ import (
 	"github.com/adimail/asset-manager/internal/assets"
 	"github.com/adimail/asset-manager/internal/config"
 	"github.com/adimail/asset-manager/internal/filesystem"
+	"github.com/adimail/asset-manager/internal/preprocessing"
+	"github.com/adimail/asset-manager/internal/tags"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -39,8 +41,11 @@ func main() {
 	fs := filesystem.New()
 	validator := assets.NewValidator(cfg.Server.MaxUploadSize)
 
-	svc := assets.NewService(client, fs, validator, cfg.Storage.AssetsDir)
-	handler := api.NewServer(svc)
+	preprocessor := preprocessing.NewService(client, cfg.Compression)
+	tagService := tags.NewService(client)
+	svc := assets.NewService(client, fs, validator, cfg.Storage.AssetsDir, preprocessor)
+
+	handler := api.NewServer(svc, tagService)
 
 	srv := &http.Server{
 		Addr:         ":" + cfg.Server.Port,
