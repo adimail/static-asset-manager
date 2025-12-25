@@ -24,6 +24,9 @@ interface AppState {
   isUploadOpen: boolean;
   setUploadOpen: (isOpen: boolean) => void;
 
+  isHelpOpen: boolean;
+  setHelpOpen: (isOpen: boolean) => void;
+
   filterType: FileType | "all";
   setFilterType: (type: FileType | "all") => void;
 
@@ -32,6 +35,12 @@ interface AppState {
 
   sortOrder: SortOption;
   setSortOrder: (order: SortOption) => void;
+
+  shouldFocusSearch: number;
+  triggerSearchFocus: () => void;
+
+  showDeleteConfirm: boolean;
+  setShowDeleteConfirm: (show: boolean) => void;
 }
 
 export const useStore = create<AppState>()(
@@ -40,14 +49,26 @@ export const useStore = create<AppState>()(
       theme: "system",
       setTheme: (theme) => set({ theme }),
 
-      masterPanelWidth: 40, // Percentage
+      masterPanelWidth: 40,
       setMasterPanelWidth: (width) => set({ masterPanelWidth: width }),
 
       selectedAssetId: null,
-      selectAsset: (id) => set({ selectedAssetId: id }),
+      selectAsset: (id) =>
+        set({
+          selectedAssetId: id,
+          isUploadOpen: false,
+          showDeleteConfirm: false,
+        }),
 
       isUploadOpen: false,
-      setUploadOpen: (isOpen) => set({ isUploadOpen: isOpen }),
+      setUploadOpen: (isOpen) =>
+        set((state) => ({
+          isUploadOpen: isOpen,
+          selectedAssetId: isOpen ? null : state.selectedAssetId,
+        })),
+
+      isHelpOpen: false,
+      setHelpOpen: (isOpen) => set({ isHelpOpen: isOpen }),
 
       filterType: "all",
       setFilterType: (type) => set({ filterType: type }),
@@ -57,6 +78,13 @@ export const useStore = create<AppState>()(
 
       sortOrder: "newest",
       setSortOrder: (order) => set({ sortOrder: order }),
+
+      shouldFocusSearch: 0,
+      triggerSearchFocus: () =>
+        set((state) => ({ shouldFocusSearch: state.shouldFocusSearch + 1 })),
+
+      showDeleteConfirm: false,
+      setShowDeleteConfirm: (show) => set({ showDeleteConfirm: show }),
     }),
     {
       name: "asset-manager-storage",

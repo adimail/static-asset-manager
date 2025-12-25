@@ -1,10 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   X,
   Trash2,
   Copy,
   Check,
-  ExternalLink,
   ArrowLeft,
   FileText,
   Download,
@@ -15,12 +14,10 @@ import { useDeleteAsset } from "../../hooks/useAssets";
 import { formatBytes } from "../../utils/fileHelpers";
 import { formatDate } from "../../utils/dateHelpers";
 import { toast } from "sonner";
-import clsx from "clsx";
 
 export function AssetPreview({ asset }: { asset: Asset }) {
-  const { selectAsset } = useStore();
+  const { selectAsset, showDeleteConfirm, setShowDeleteConfirm } = useStore();
   const { mutate: deleteAsset } = useDeleteAsset();
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [copiedField, setCopiedField] = useState<string | null>(null);
 
   const handleDelete = () => {
@@ -46,7 +43,6 @@ export function AssetPreview({ asset }: { asset: Asset }) {
 
   return (
     <div className="h-full flex flex-col bg-bg animate-fade-in">
-      {/* Header */}
       <div className="h-16 flex-none px-6 flex items-center justify-between border-b border-border bg-surface/50 backdrop-blur-sm z-10">
         {showDeleteConfirm ? (
           <div className="flex items-center justify-between w-full bg-red-50 dark:bg-red-900/20 p-2 border border-red-200 dark:border-red-800 animate-scale-in">
@@ -55,14 +51,15 @@ export function AssetPreview({ asset }: { asset: Asset }) {
             </span>
             <div className="flex gap-2">
               <button
+                autoFocus
                 onClick={() => setShowDeleteConfirm(false)}
-                className="px-3 py-1.5 text-sm font-medium text-text-secondary hover:bg-white/50 transition-colors"
+                className="px-3 py-1.5 text-sm font-medium text-text-secondary hover:bg-white/50 transition-colors cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 onClick={handleDelete}
-                className="px-3 py-1.5 text-sm font-medium text-white bg-red-500 hover:bg-red-600 shadow-sm transition-colors"
+                className="px-3 py-1.5 text-sm font-medium text-white bg-red-500 hover:bg-red-600 shadow-sm transition-colors cursor-pointer"
               >
                 Confirm
               </button>
@@ -100,14 +97,14 @@ export function AssetPreview({ asset }: { asset: Asset }) {
               </a>
               <button
                 onClick={() => setShowDeleteConfirm(true)}
-                className="p-2 text-text-secondary hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                className="p-2 text-text-secondary hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors cursor-pointer"
                 title="Delete"
               >
                 <Trash2 size={18} />
               </button>
               <button
                 onClick={() => selectAsset(null)}
-                className="hidden md:block p-2 text-text-secondary hover:bg-surface-highlight transition-colors"
+                className="hidden md:block p-2 text-text-secondary hover:bg-surface-highlight transition-colors cursor-pointer"
                 title="Close"
               >
                 <X size={18} />
@@ -117,7 +114,6 @@ export function AssetPreview({ asset }: { asset: Asset }) {
         )}
       </div>
 
-      {/* Preview Area */}
       <div className="flex-1 overflow-auto p-4 md:p-8 flex items-center justify-center bg-surface-highlight/30">
         <div className="relative w-full h-full max-w-4xl max-h-[800px] flex items-center justify-center overflow-hidden">
           {asset.file_type === "image" ? (
@@ -134,7 +130,7 @@ export function AssetPreview({ asset }: { asset: Asset }) {
             />
           ) : asset.file_type === "audio" ? (
             <div className="w-full max-w-xl p-8 flex flex-col items-center">
-              <div className="w-32 h-32 bg-gradient-to-br from-cyan-400 to-blue-500 rounded-full flex items-center justify-center shadow-lg mb-8 animate-pulse-slow">
+              <div className="w-32 h-32 bg-gradient-to-br from-cyan-400 to-blue-500 rounded-full flex items-center justify-center shadow-lg mb-8">
                 <span className="text-5xl">🎵</span>
               </div>
               <h3 className="text-center font-medium mb-6 truncate w-full text-lg text-primary">
@@ -157,16 +153,14 @@ export function AssetPreview({ asset }: { asset: Asset }) {
             </object>
           ) : (
             <div className="text-center p-8">
-              <div className="w-24 h-24 bg-surface-highlight  mx-auto mb-6 flex items-center justify-center">
+              <div className="w-24 h-24 bg-surface-highlight mx-auto mb-6 flex items-center justify-center">
                 <FileText size={48} className="text-text-muted" />
               </div>
-              <p className="text-text-secondary mb-4">
-                No preview available for this file type
-              </p>
+              <p className="text-text-secondary mb-4">No preview available</p>
               <a
                 href={downloadUrl}
                 download
-                className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white hover:bg-primary-hover transition-colors shadow-lg shadow-primary/25"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white hover:bg-primary-hover transition-colors shadow-lg"
               >
                 <Download size={16} /> Download File
               </a>
@@ -175,7 +169,6 @@ export function AssetPreview({ asset }: { asset: Asset }) {
         </div>
       </div>
 
-      {/* Metadata Panel */}
       <div className="flex-none bg-surface border-t border-border p-6 md:p-8">
         <h3 className="font-semibold text-lg mb-6 text-text-primary">
           File Information
@@ -186,10 +179,7 @@ export function AssetPreview({ asset }: { asset: Asset }) {
               label="Type"
               value={`${asset.file_type} (${asset.extension})`}
             />
-            <InfoRow
-              label="Size"
-              value={`${formatBytes(asset.file_size_bytes)}`}
-            />
+            <InfoRow label="Size" value={formatBytes(asset.file_size_bytes)} />
             <InfoRow label="Uploaded" value={formatDate(asset.created_at)} />
           </div>
           <div className="space-y-4">
@@ -197,13 +187,13 @@ export function AssetPreview({ asset }: { asset: Asset }) {
               <label className="text-xs font-medium text-text-muted uppercase tracking-wider mb-1 block">
                 Asset ID
               </label>
-              <div className="flex items-center gap-2 bg-surface-highlight p-2 border border-border group-hover:border-primary/30 transition-colors">
+              <div className="flex items-center gap-2 bg-surface-highlight p-2 border border-border">
                 <code className="text-xs font-mono text-text-secondary flex-1 truncate">
                   {asset.id}
                 </code>
                 <button
                   onClick={() => copyToClipboard(asset.id, "id")}
-                  className="text-text-muted hover:text-primary transition-colors"
+                  className="text-text-muted hover:text-primary cursor-pointer"
                 >
                   {copiedField === "id" ? (
                     <Check size={14} />
@@ -217,7 +207,7 @@ export function AssetPreview({ asset }: { asset: Asset }) {
               <label className="text-xs font-medium text-text-muted uppercase tracking-wider mb-1 block">
                 Public URL
               </label>
-              <div className="flex items-center gap-2 bg-surface-highlight p-2 border border-border group-hover:border-primary/30 transition-colors">
+              <div className="flex items-center gap-2 bg-surface-highlight p-2 border border-border">
                 <code className="text-xs font-mono text-text-secondary flex-1 truncate">
                   {window.location.origin}
                   {downloadUrl}
@@ -226,7 +216,7 @@ export function AssetPreview({ asset }: { asset: Asset }) {
                   onClick={() =>
                     copyToClipboard(window.location.origin + downloadUrl, "url")
                   }
-                  className="text-text-muted hover:text-primary transition-colors"
+                  className="text-text-muted hover:text-primary cursor-pointer"
                 >
                   {copiedField === "url" ? (
                     <Check size={14} />

@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useState, useRef } from "react";
 import { useDropzone } from "react-dropzone";
 import { UploadCloud, X, CheckCircle, AlertCircle, File } from "lucide-react";
 import { useStore } from "../../store/useStore";
@@ -57,17 +57,30 @@ export function UploadInterface() {
     [mutateAsync],
   );
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop });
+  const { getRootProps, getInputProps, isDragActive, open } = useDropzone({
+    onDrop,
+    noClick: true,
+    noKeyboard: true,
+  });
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !uploads.length) {
+      open();
+    }
+  };
 
   const hasActiveUploads = uploads.length > 0;
 
   return (
-    <div className="h-full flex flex-col p-8 bg-bg animate-fade-in">
+    <div
+      className="h-full flex flex-col p-8 bg-bg animate-fade-in"
+      onKeyDown={handleKeyDown}
+    >
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold text-text-primary">Upload Files</h2>
         <button
           onClick={() => setUploadOpen(false)}
-          className="p-2 text-text-muted hover:text-text-primary hover:bg-surface-highlight rounded-full transition-colors"
+          className="p-2 text-text-muted hover:text-text-primary hover:bg-surface-highlight rounded-full transition-colors cursor-pointer"
         >
           <X size={24} />
         </button>
@@ -76,15 +89,17 @@ export function UploadInterface() {
       {!hasActiveUploads ? (
         <div
           {...getRootProps()}
+          onClick={open}
+          tabIndex={0}
           className={clsx(
-            "flex-1 border-2 border-dashed  flex flex-col items-center justify-center transition-all duration-300 cursor-pointer group",
+            "flex-1 border-2 border-dashed flex flex-col items-center justify-center transition-all duration-300 cursor-pointer group outline-none focus:ring-2 focus:ring-primary",
             isDragActive
               ? "border-primary bg-primary/5 scale-[1.01]"
               : "border-border hover:border-primary/50 hover:bg-surface-highlight/50",
           )}
         >
           <input {...getInputProps()} />
-          <div className="w-20 h-20 bg-amber-700 flex items-center justify-center shadow-xl shadow-black-500/20 mb-8 group-hover:scale-110 transition-transform duration-300">
+          <div className="w-20 h-20 bg-amber-700 flex items-center justify-center shadow-xl mb-8 group-hover:scale-110 transition-transform duration-300">
             <UploadCloud size={40} className="text-white" />
           </div>
           <h3 className="text-xl font-semibold text-text-primary mb-2">
@@ -93,28 +108,20 @@ export function UploadInterface() {
           <p className="text-text-muted mb-8">
             or click to browse from your computer
           </p>
-          <button className="bg-surface border border-border text-text-primary px-6 py-2.5  font-medium shadow-sm hover:bg-surface-highlight transition-colors">
+          <button className="bg-surface border border-border text-text-primary px-6 py-2.5 font-medium shadow-sm hover:bg-surface-highlight transition-colors pointer-events-none">
             Browse Files
           </button>
-          <div className="mt-12 flex gap-8 text-xs text-text-muted uppercase tracking-wider">
-            <span>Images</span>
-            <span>Documents</span>
-            <span>Audio</span>
-            <span>Video</span>
-          </div>
         </div>
       ) : (
         <div className="flex-1 overflow-y-auto space-y-4 pr-2">
           {uploads.map((upload, idx) => (
             <div
               key={idx}
-              className="bg-surface p-4  border border-border shadow-sm flex items-center gap-4 animate-slide-up"
-              style={{ animationDelay: `${idx * 50}ms` }}
+              className="bg-surface p-4 border border-border shadow-sm flex items-center gap-4 animate-slide-up"
             >
               <div className="w-10 h-10 bg-surface-highlight flex items-center justify-center flex-none">
                 <File size={20} className="text-text-secondary" />
               </div>
-
               <div className="flex-1 min-w-0">
                 <div className="flex justify-between mb-1.5">
                   <span className="font-medium text-sm text-text-primary truncate">
@@ -151,7 +158,6 @@ export function UploadInterface() {
                   />
                 </div>
               </div>
-
               <div className="flex-none">
                 {upload.status === "success" && (
                   <CheckCircle size={20} className="text-green-500" />
@@ -168,13 +174,14 @@ export function UploadInterface() {
           ) && (
             <div className="flex justify-center mt-8">
               <button
+                autoFocus
                 onClick={() => {
                   setUploads([]);
                   setUploadOpen(false);
                 }}
-                className="text-primary hover:text-primary-hover font-medium hover:underline"
+                className="text-primary hover:text-primary-hover font-medium hover:underline cursor-pointer"
               >
-                Upload more files
+                Return to list
               </button>
             </div>
           )}

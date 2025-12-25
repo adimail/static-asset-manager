@@ -5,6 +5,8 @@ import { Toaster } from "sonner";
 import { useStore } from "./store/useStore";
 import { Header } from "./components/Layout/Header";
 import { MainLayout } from "./components/Layout/MainLayout";
+import { Footer } from "./components/Layout/Footer";
+import { HelpModal } from "./components/Layout/HelpModal";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -16,7 +18,16 @@ const queryClient = new QueryClient({
 });
 
 function App() {
-  const { theme } = useStore();
+  const {
+    theme,
+    setUploadOpen,
+    triggerSearchFocus,
+    selectAsset,
+    setHelpOpen,
+    isHelpOpen,
+    isUploadOpen,
+    selectedAssetId,
+  } = useStore();
 
   useEffect(() => {
     const root = window.document.documentElement;
@@ -33,6 +44,49 @@ function App() {
     }
   }, [theme]);
 
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      const isInput = ["INPUT", "TEXTAREA", "SELECT"].includes(
+        (e.target as HTMLElement).tagName,
+      );
+
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "u") {
+        e.preventDefault();
+        setUploadOpen(true);
+      }
+
+      if (
+        ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "f") ||
+        (e.key === "/" && !isInput)
+      ) {
+        e.preventDefault();
+        triggerSearchFocus();
+      }
+
+      if (e.key === "Escape") {
+        if (isHelpOpen) setHelpOpen(false);
+        else if (isUploadOpen) setUploadOpen(false);
+        else if (selectedAssetId) selectAsset(null);
+      }
+
+      if (e.key === "?" && !isInput) {
+        e.preventDefault();
+        setHelpOpen(true);
+      }
+    };
+
+    window.addEventListener("keydown", handleGlobalKeyDown);
+    return () => window.removeEventListener("keydown", handleGlobalKeyDown);
+  }, [
+    isHelpOpen,
+    isUploadOpen,
+    selectedAssetId,
+    setUploadOpen,
+    triggerSearchFocus,
+    selectAsset,
+    setHelpOpen,
+  ]);
+
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
@@ -45,6 +99,8 @@ function App() {
           />
           <Header />
           <MainLayout />
+          <Footer />
+          <HelpModal />
         </div>
       </BrowserRouter>
     </QueryClientProvider>

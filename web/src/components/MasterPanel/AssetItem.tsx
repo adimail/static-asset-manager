@@ -22,20 +22,21 @@ const ColorMap = {
 };
 
 export function AssetItem({ asset }: { asset: Asset }) {
-  const { selectedAssetId, selectAsset, setUploadOpen } = useStore();
+  const { selectedAssetId, selectAsset } = useStore();
   const isSelected = selectedAssetId === asset.id;
   const Icon = IconMap[asset.file_type] || File;
   const colorClass = ColorMap[asset.file_type] || ColorMap.other;
 
-  const handleClick = () => {
+  const handleClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     selectAsset(asset.id);
-    setUploadOpen(false);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
-      handleClick();
+      selectAsset(asset.id);
     }
   };
 
@@ -47,21 +48,17 @@ export function AssetItem({ asset }: { asset: Asset }) {
       role="listitem"
       tabIndex={0}
       className={clsx(
-        "group relative p-3 cursor-pointer transition-all duration-200  border",
+        "group relative p-3 cursor-pointer transition-all duration-200 border outline-none focus:ring-2 focus:ring-primary/50 z-0",
         isSelected
           ? "bg-primary-light border-primary/30 shadow-sm"
           : "bg-transparent border-transparent hover:bg-surface hover:shadow-md hover:border-border/50",
       )}
     >
-      {/* Left Accent Border for Selected State */}
       {isSelected && (
         <div className="absolute left-0 top-3 bottom-3 w-1 bg-primary rounded-r-full" />
       )}
 
-      <div
-        className={clsx("flex items-center gap-4")}
-      >
-        {/* Icon / Thumbnail */}
+      <div className="flex items-center gap-4 pointer-events-none">
         <div
           className={clsx(
             "w-12 h-12 flex-none overflow-hidden flex items-center justify-center transition-transform duration-200",
@@ -80,13 +77,8 @@ export function AssetItem({ asset }: { asset: Asset }) {
           )}
         </div>
 
-        {/* Content */}
         <div className="flex-1 min-w-0">
-          <h3
-            className={clsx(
-              "text-sm font-medium truncate transition-colors text-primary"
-            )}
-          >
+          <h3 className="text-sm font-medium truncate text-primary">
             {asset.original_filename}
           </h3>
           <div className="flex items-center gap-2 text-xs text-text-secondary mt-1">

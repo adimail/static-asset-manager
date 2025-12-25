@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { Search, X, Filter, ArrowUpDown } from "lucide-react";
 import { useStore } from "../../store/useStore";
 import { FileType } from "../../api/types";
@@ -10,22 +11,32 @@ export function FilterBar() {
     setSearchQuery,
     sortOrder,
     setSortOrder,
+    shouldFocusSearch,
   } = useStore();
+
+  const searchRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (shouldFocusSearch > 0) {
+      searchRef.current?.focus();
+      searchRef.current?.select();
+    }
+  }, [shouldFocusSearch]);
 
   return (
     <div className="p-4 space-y-3 flex-none bg-sidebar/50 backdrop-blur-sm sticky top-0 z-10 border-b border-border/50">
-      {/* Search Input */}
       <div className="relative group">
         <Search
           className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted group-focus-within:text-primary transition-colors"
           size={16}
         />
         <input
+          ref={searchRef}
           type="text"
           placeholder="Search files..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full h-10 pl-10 pr-8 bg-surface-highlight/50 border border-border  text-sm text-text-primary placeholder:text-text-muted focus:ring-2 focus:ring-primary/20 focus:border-primary focus:bg-surface transition-all outline-none"
+          className="w-full h-10 pl-10 pr-8 bg-surface-highlight/50 border border-border text-sm text-text-primary placeholder:text-text-muted focus:ring-2 focus:ring-primary/20 focus:border-primary focus:bg-surface transition-all outline-none"
         />
         {searchQuery && (
           <button
@@ -38,7 +49,6 @@ export function FilterBar() {
       </div>
 
       <div className="flex gap-2">
-        {/* Filter Dropdown */}
         <div className="relative flex-1">
           <Filter
             className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none"
@@ -58,7 +68,6 @@ export function FilterBar() {
           </select>
         </div>
 
-        {/* Sort Dropdown */}
         <div className="relative flex-1">
           <ArrowUpDown
             className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none"
