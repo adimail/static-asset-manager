@@ -1,8 +1,11 @@
-import { FileText, Image, Music, Video, File } from "lucide-react";
+import { memo } from "react";
+import { FileText, Image, Music, Video, File, Trash2 } from "lucide-react";
 import { Asset } from "../../api/types";
 import { useStore } from "../../store/useStore";
+import { useDeleteAsset } from "../../hooks/useAssets";
 import { formatBytes } from "../../utils/fileHelpers";
 import { formatDate } from "../../utils/dateHelpers";
+import { toast } from "sonner";
 import clsx from "clsx";
 
 const IconMap = {
@@ -21,8 +24,10 @@ const ColorMap = {
   other: "text-gray-500 bg-gray-500/10",
 };
 
-export function AssetItem({ asset }: { asset: Asset }) {
+export const AssetItem = memo(({ asset }: { asset: Asset }) => {
   const { selectedAssetId, selectAsset } = useStore();
+  const { mutate: deleteAsset } = useDeleteAsset();
+
   const isSelected = selectedAssetId === asset.id;
   const Icon = IconMap[asset.file_type] || File;
   const colorClass = ColorMap[asset.file_type] || ColorMap.other;
@@ -31,6 +36,24 @@ export function AssetItem({ asset }: { asset: Asset }) {
     e.preventDefault();
     e.stopPropagation();
     selectAsset(asset.id);
+  };
+
+  const handleDelete = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (
+      window.confirm(
+        `Are you sure you want to delete ${asset.original_filename}?`,
+      )
+    ) {
+      deleteAsset(asset.id, {
+        onSuccess: () => {
+          toast.success("Asset deleted");
+          if (isSelected) selectAsset(null);
+        },
+        onError: () => toast.error("Failed to delete asset"),
+      });
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -48,7 +71,7 @@ export function AssetItem({ asset }: { asset: Asset }) {
       role="listitem"
       tabIndex={0}
       className={clsx(
-        "group relative p-3 cursor-pointer transition-all duration-200 border outline-none focus:ring-2 focus:ring-primary/50 z-0",
+        "group relative p-3 cursor-pointer border outline-none transition-all duration-200",
         isSelected
           ? "bg-primary-light border-primary/30 shadow-sm"
           : "bg-transparent border-transparent hover:bg-surface hover:shadow-md hover:border-border/50",
@@ -61,7 +84,7 @@ export function AssetItem({ asset }: { asset: Asset }) {
       <div className="flex items-center gap-4 pointer-events-none">
         <div
           className={clsx(
-            "w-12 h-12 flex-none overflow-hidden flex items-center justify-center transition-transform duration-200",
+            "w-12 h-12 flex-none overflow-hidden flex items-center justify-center",
             asset.file_type === "image" ? "bg-surface-highlight" : colorClass,
           )}
         >
@@ -90,10 +113,17 @@ export function AssetItem({ asset }: { asset: Asset }) {
           </div>
         </div>
 
+        <button
+          onClick={handleDelete}
+          className="pointer-events-auto p-2 text-text-muted hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-opacity opacity-0 group-hover:opacity-100 cursor-pointer"
+        >
+          <Trash2 size={16} />
+        </button>
+
         <div className="text-[10px] text-text-muted hidden sm:block">
           {formatDate(asset.created_at)}
         </div>
       </div>
     </div>
   );
-}
+});

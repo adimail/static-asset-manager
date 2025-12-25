@@ -4,6 +4,13 @@ import { useStore } from "../../store/useStore";
 import { FilterBar } from "./FilterBar";
 import { AssetItem } from "./AssetItem";
 import { FolderOpen } from "lucide-react";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 
 export function MasterPanel() {
   const { data: assets, isLoading } = useAssets();
@@ -14,8 +21,12 @@ export function MasterPanel() {
     selectedAssetId,
     selectAsset,
     setShowDeleteConfirm,
+    currentPage,
+    setCurrentPage,
   } = useStore();
   const listRef = useRef<HTMLDivElement>(null);
+
+  const ITEMS_PER_PAGE = 100;
 
   const filteredAssets = useMemo(() => {
     if (!assets) return [];
@@ -54,14 +65,20 @@ export function MasterPanel() {
     return result;
   }, [assets, filterType, searchQuery, sortOrder]);
 
+  const totalPages = Math.ceil(filteredAssets.length / ITEMS_PER_PAGE);
+  const paginatedAssets = useMemo(() => {
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredAssets.slice(start, start + ITEMS_PER_PAGE);
+  }, [filteredAssets, currentPage]);
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const isInput = ["INPUT", "TEXTAREA", "SELECT"].includes(
         (e.target as HTMLElement).tagName,
       );
-      if (isInput || filteredAssets.length === 0) return;
+      if (isInput || paginatedAssets.length === 0) return;
 
-      const currentIndex = filteredAssets.findIndex(
+      const currentIndex = paginatedAssets.findIndex(
         (a) => a.id === selectedAssetId,
       );
 
@@ -70,26 +87,26 @@ export function MasterPanel() {
         const nextIndex =
           currentIndex === -1
             ? 0
-            : Math.min(currentIndex + 1, filteredAssets.length - 1);
-        selectAsset(filteredAssets[nextIndex].id);
+            : Math.min(currentIndex + 1, paginatedAssets.length - 1);
+        selectAsset(paginatedAssets[nextIndex].id);
         document
-          .getElementById(`asset-${filteredAssets[nextIndex].id}`)
+          .getElementById(`asset-${paginatedAssets[nextIndex].id}`)
           ?.scrollIntoView({ block: "nearest" });
       } else if (e.key === "ArrowUp") {
         e.preventDefault();
         const prevIndex =
           currentIndex === -1 ? 0 : Math.max(currentIndex - 1, 0);
-        selectAsset(filteredAssets[prevIndex].id);
+        selectAsset(paginatedAssets[prevIndex].id);
         document
-          .getElementById(`asset-${filteredAssets[prevIndex].id}`)
+          .getElementById(`asset-${paginatedAssets[prevIndex].id}`)
           ?.scrollIntoView({ block: "nearest" });
       } else if (e.key === "Home") {
         e.preventDefault();
-        selectAsset(filteredAssets[0].id);
+        selectAsset(paginatedAssets[0].id);
         listRef.current?.scrollTo({ top: 0 });
       } else if (e.key === "End") {
         e.preventDefault();
-        selectAsset(filteredAssets[filteredAssets.length - 1].id);
+        selectAsset(paginatedAssets[paginatedAssets.length - 1].id);
         listRef.current?.scrollTo({ top: listRef.current.scrollHeight });
       } else if (e.key === "Delete" && selectedAssetId) {
         e.preventDefault();
@@ -99,7 +116,7 @@ export function MasterPanel() {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [filteredAssets, selectedAssetId, selectAsset, setShowDeleteConfirm]);
+  }, [paginatedAssets, selectedAssetId, selectAsset, setShowDeleteConfirm]);
 
   return (
     <div className="flex flex-col h-full bg-gradient-to-b from-sidebar to-bg border-r border-border">
@@ -108,7 +125,6 @@ export function MasterPanel() {
         ref={listRef}
         className="flex-1 overflow-y-auto p-3 space-y-2 focus:outline-none"
         role="list"
-        aria-label="Asset list"
         tabIndex={-1}
       >
         {isLoading ? (
@@ -116,22 +132,47 @@ export function MasterPanel() {
             <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
             <span className="text-sm text-text-muted">Loading assets...</span>
           </div>
-        ) : filteredAssets.length === 0 ? (
+        ) : paginatedAssets.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-64 text-text-muted animate-fade-in">
-            <div className="w-16 h-16 bg-surface-highlight rounded-full flex items-center justify-center mb-4">
-              <FolderOpen size={32} className="opacity-50" />
-            </div>
+            <FolderOpen size={32} className="opacity-50 mb-4" />
             <p className="text-lg font-medium text-text-primary">
               No files found
             </p>
-            <p className="text-sm">Try adjusting your filters</p>
           </div>
         ) : (
-          filteredAssets.map((asset) => (
+          paginatedAssets.map((asset) => (
             <AssetItem key={asset.id} asset={asset} />
           ))
         )}
       </div>
+
+      {totalPages > 1 && (
+        <div className="p-4 border-t border-border bg-surface/50">
+          <Pagination>
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious
+                  className="cursor-pointer"
+                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                />
+              </PaginationItem>
+              <PaginationItem>
+                <span className="text-xs font-bold px-4 text-text-secondary">
+                  {currentPage} / {totalPages}
+                </span>
+              </PaginationItem>
+              <PaginationItem>
+                <PaginationNext
+                  className="cursor-pointer"
+                  onClick={() =>
+                    setCurrentPage(Math.min(totalPages, currentPage + 1))
+                  }
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+        </div>
+      )}
     </div>
   );
 }

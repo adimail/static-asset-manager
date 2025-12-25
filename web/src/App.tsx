@@ -96,6 +96,13 @@ function App() {
             richColors
             closeButton
             theme={theme === "system" ? "system" : theme}
+            toastOptions={{
+              style: {
+                background: theme === "light" ? "#fefce8" : "#1e293b",
+                color: theme === "light" ? "#451a03" : "#f1f5f9",
+                border: "1px solid var(--color-border)",
+              },
+            }}
           />
           <Header />
           <MainLayout />
