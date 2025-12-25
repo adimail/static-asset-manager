@@ -21,6 +21,7 @@ func NewServer(assetService *assets.Service) http.Handler {
 	api.HandleFunc("/assets", h.Upload).Methods("POST")
 	api.HandleFunc("/assets", h.List).Methods("GET")
 	api.HandleFunc("/assets/{id}", h.Delete).Methods("DELETE")
+	api.HandleFunc("/assets/{id}/download", h.Download).Methods("GET")
 
 	c := cors.New(cors.Options{
 		AllowedOrigins: []string{"*"},
