@@ -10,6 +10,7 @@ type SortOption =
   | "name-desc"
   | "size-desc"
   | "size-asc";
+type ViewMode = "list" | "grid";
 
 interface AppState {
   theme: Theme;
@@ -22,13 +23,23 @@ interface AppState {
   setUploadOpen: (isOpen: boolean) => void;
   isHelpOpen: boolean;
   setHelpOpen: (isOpen: boolean) => void;
+
   filterTypes: FileType[];
   toggleFilterType: (type: FileType) => void;
   clearFilters: () => void;
+
+  tagFilter: string | null;
+  setTagFilter: (tagId: string | null) => void;
+
   searchQuery: string;
   setSearchQuery: (query: string) => void;
+
   sortOrder: SortOption;
   setSortOrder: (order: SortOption) => void;
+
+  viewMode: ViewMode;
+  setViewMode: (mode: ViewMode) => void;
+
   shouldFocusSearch: number;
   triggerSearchFocus: () => void;
   showDeleteConfirm: boolean;
@@ -36,7 +47,6 @@ interface AppState {
   currentPage: number;
   setCurrentPage: (page: number) => void;
 
-  // Selection Mode
   isSelectionMode: boolean;
   toggleSelectionMode: () => void;
   selectedAssetIds: string[];
@@ -44,7 +54,6 @@ interface AppState {
   clearSelection: () => void;
   selectAll: (ids: string[]) => void;
 
-  // Tag Modal
   isTagModalOpen: boolean;
   setTagModalOpen: (isOpen: boolean) => void;
 }
@@ -79,11 +88,20 @@ export const useStore = create<AppState>()(
             : [...state.filterTypes, type];
           return { filterTypes: next, currentPage: 1 };
         }),
-      clearFilters: () => set({ filterTypes: [], currentPage: 1 }),
+      clearFilters: () =>
+        set({ filterTypes: [], currentPage: 1, tagFilter: null }),
+
+      tagFilter: null,
+      setTagFilter: (tagId) => set({ tagFilter: tagId, currentPage: 1 }),
+
       searchQuery: "",
       setSearchQuery: (query) => set({ searchQuery: query, currentPage: 1 }),
       sortOrder: "newest",
       setSortOrder: (order) => set({ sortOrder: order, currentPage: 1 }),
+
+      viewMode: "list",
+      setViewMode: (mode) => set({ viewMode: mode }),
+
       shouldFocusSearch: 0,
       triggerSearchFocus: () =>
         set((state) => ({ shouldFocusSearch: state.shouldFocusSearch + 1 })),
@@ -121,6 +139,7 @@ export const useStore = create<AppState>()(
         theme: state.theme,
         masterPanelWidth: state.masterPanelWidth,
         sortOrder: state.sortOrder,
+        viewMode: state.viewMode,
       }),
     },
   ),

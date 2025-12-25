@@ -7,7 +7,7 @@ import {
 import { useStore } from "../../store/useStore";
 import { FilterBar } from "./FilterBar";
 import { AssetItem } from "./AssetItem";
-import { FolderOpen, Info, CheckSquare, X } from "lucide-react";
+import { FolderOpen, Info } from "lucide-react";
 import { toast } from "sonner";
 import {
   Pagination,
@@ -16,6 +16,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
+import clsx from "clsx";
 
 export function MasterPanel() {
   const {
@@ -24,6 +25,8 @@ export function MasterPanel() {
     filterTypes,
     searchQuery,
     sortOrder,
+    tagFilter,
+    viewMode,
     selectedAssetId,
     selectAsset,
     isSelectionMode,
@@ -34,7 +37,7 @@ export function MasterPanel() {
     setTagModalOpen,
   } = useStore();
 
-  const { data, isLoading } = useAssets(currentPage);
+  const { data, isLoading } = useAssets(currentPage, 50, tagFilter);
   const { mutate: bulkDelete } = useBulkDeleteAssets();
   const { mutate: bulkCompress } = useBulkCompressAssets();
   const listRef = useRef<HTMLDivElement>(null);
@@ -168,7 +171,7 @@ export function MasterPanel() {
         </div>
         <button
           onClick={toggleSelectionMode}
-          className="text-[10px] font-bold uppercase tracking-widest text-primary hover:underline"
+          className="text-[10px] font-bold uppercase tracking-widest text-primary hover:underline cursor-pointer"
         >
           {isSelectionMode ? "Cancel Selection" : "Select Multiple"}
         </button>
@@ -176,7 +179,7 @@ export function MasterPanel() {
 
       <div
         ref={listRef}
-        className="flex-1 overflow-y-auto p-3 space-y-2 focus:outline-none pb-20"
+        className="flex-1 overflow-y-auto p-3 focus:outline-none pb-20"
       >
         {isLoading ? (
           <div className="flex flex-col items-center justify-center h-32">
@@ -188,9 +191,17 @@ export function MasterPanel() {
             <p>No files found</p>
           </div>
         ) : (
-          processedAssets.map((asset) => (
-            <AssetItem key={asset.id} asset={asset} />
-          ))
+          <div
+            className={clsx(
+              viewMode === "grid"
+                ? "grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3"
+                : "space-y-2",
+            )}
+          >
+            {processedAssets.map((asset) => (
+              <AssetItem key={asset.id} asset={asset} viewMode={viewMode} />
+            ))}
+          </div>
         )}
       </div>
 

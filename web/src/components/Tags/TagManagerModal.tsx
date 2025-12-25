@@ -130,7 +130,7 @@ export function TagManagerModal() {
           </div>
           <button
             onClick={() => setTagModalOpen(false)}
-            className="text-text-muted hover:text-text-primary transition-colors"
+            className="text-text-muted hover:text-text-primary transition-colors cursor-pointer"
           >
             <X size={20} />
           </button>
@@ -169,7 +169,7 @@ export function TagManagerModal() {
                   type="button"
                   onClick={() => setSelectedColor(color)}
                   className={clsx(
-                    "w-6 h-6 rounded-full transition-transform hover:scale-110 focus:outline-none ring-2 ring-offset-2 ring-offset-surface",
+                    "w-6 h-6 rounded-full transition-transform hover:scale-110 focus:outline-none ring-2 ring-offset-2 ring-offset-surface cursor-pointer",
                     selectedColor === color
                       ? "ring-primary scale-110"
                       : "ring-transparent",
@@ -202,7 +202,7 @@ export function TagManagerModal() {
                       key={tag.id}
                       onClick={() => toggleTagSelection(tag.id)}
                       className={clsx(
-                        "px-3 py-1.5 rounded-full text-sm font-medium border transition-all flex items-center gap-2",
+                        "px-3 py-1.5 rounded-full text-sm font-medium border transition-all flex items-center gap-2  cursor-pointer",
                         isSelected
                           ? "bg-primary/10 border-primary text-primary shadow-sm"
                           : "bg-surface border-border text-text-secondary hover:border-primary/50",

@@ -2,7 +2,6 @@ import { useEffect, useRef } from "react";
 import {
   Search,
   X,
-  ArrowUpDown,
   Image,
   Video,
   Music,
@@ -12,6 +11,7 @@ import {
   LayoutGrid,
 } from "lucide-react";
 import { useStore } from "../../store/useStore";
+import { useTags } from "../../hooks/useTags";
 import { FileType } from "../../api/types";
 import clsx from "clsx";
 
@@ -34,8 +34,13 @@ export function FilterBar() {
     sortOrder,
     setSortOrder,
     shouldFocusSearch,
+    tagFilter,
+    setTagFilter,
+    viewMode,
+    setViewMode,
   } = useStore();
 
+  const { data: tags } = useTags();
   const searchRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -104,15 +109,24 @@ export function FilterBar() {
         })}
       </div>
 
-      <div className="relative">
-        <ArrowUpDown
-          className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none"
-          size={14}
-        />
+      <div className="grid grid-cols-3 gap-2">
+        <select
+          value={tagFilter || ""}
+          onChange={(e) => setTagFilter(e.target.value || null)}
+          className="h-9 px-2 bg-surface border border-border text-xs font-medium text-text-secondary focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none cursor-pointer hover:bg-surface-highlight transition-colors"
+        >
+          <option value="">All Tags</option>
+          {tags?.map((tag) => (
+            <option key={tag.id} value={tag.name}>
+              {tag.name}
+            </option>
+          ))}
+        </select>
+
         <select
           value={sortOrder}
           onChange={(e) => setSortOrder(e.target.value as any)}
-          className="w-full h-9 pl-9 pr-8 bg-surface border border-border text-xs font-medium text-text-secondary focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none appearance-none cursor-pointer hover:bg-surface-highlight transition-colors"
+          className="h-9 px-2 bg-surface border border-border text-xs font-medium text-text-secondary focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none cursor-pointer hover:bg-surface-highlight transition-colors"
         >
           <option value="newest">Newest First</option>
           <option value="oldest">Oldest First</option>
@@ -120,6 +134,15 @@ export function FilterBar() {
           <option value="name-desc">Name (Z-A)</option>
           <option value="size-desc">Size (Large)</option>
           <option value="size-asc">Size (Small)</option>
+        </select>
+
+        <select
+          value={viewMode}
+          onChange={(e) => setViewMode(e.target.value as any)}
+          className="h-9 px-2 bg-surface border border-border text-xs font-medium text-text-secondary focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none cursor-pointer hover:bg-surface-highlight transition-colors"
+        >
+          <option value="list">List View</option>
+          <option value="grid">Grid View</option>
         </select>
       </div>
     </div>

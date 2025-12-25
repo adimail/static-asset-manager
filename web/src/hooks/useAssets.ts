@@ -3,13 +3,22 @@ import { api } from "../api/client";
 import { Assets } from "../api/types";
 import { toast } from "sonner";
 
-export function useAssets(page: number = 1, limit: number = 50) {
+export function useAssets(
+  page: number = 1,
+  limit: number = 50,
+  tag: string | null = null,
+) {
   return useQuery({
-    queryKey: ["assets", page, limit],
+    queryKey: ["assets", page, limit, tag],
     queryFn: async () => {
-      const { data } = await api.get<Assets>(
-        `/assets?page=${page}&limit=${limit}`,
-      );
+      const params = new URLSearchParams();
+      params.append("page", page.toString());
+      params.append("limit", limit.toString());
+      if (tag) {
+        params.append("tags", tag);
+      }
+
+      const { data } = await api.get<Assets>(`/assets?${params.toString()}`);
       return data;
     },
   });
