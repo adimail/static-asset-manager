@@ -85,6 +85,31 @@ func (h *AssetHandler) BulkDelete(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+func (h *AssetHandler) Compress(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	if err := h.service.CompressAsset(r.Context(), vars["id"]); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusAccepted)
+}
+
+func (h *AssetHandler) BulkCompress(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		IDs []string `json:"ids"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	if err := h.service.CompressMultiple(r.Context(), req.IDs); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusAccepted)
+}
+
 func (h *AssetHandler) Download(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	asset, err := h.service.Get(r.Context(), vars["id"])

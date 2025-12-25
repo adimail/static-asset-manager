@@ -8,10 +8,11 @@ import {
   Trash2,
   CheckSquare,
   Square,
+  Zap,
 } from "lucide-react";
 import { Asset } from "../../api/types";
 import { useStore } from "../../store/useStore";
-import { useDeleteAsset } from "../../hooks/useAssets";
+import { useDeleteAsset, useCompressAsset } from "../../hooks/useAssets";
 import { formatBytes } from "../../utils/fileHelpers";
 import { formatDate } from "../../utils/dateHelpers";
 import { toast } from "sonner";
@@ -45,11 +46,15 @@ export const AssetItem = memo(({ asset }: { asset: Asset }) => {
     toggleSelectionMode,
   } = useStore();
   const { mutate: deleteAsset } = useDeleteAsset();
+  const { mutate: compressAsset } = useCompressAsset();
 
   const isSelected = selectedAssetId === asset.id;
   const isChecked = selectedAssetIds.includes(asset.id);
   const Icon = IconMap[asset.file_type] || File;
   const colorClass = ColorMap[asset.file_type] || ColorMap.other;
+  const canCompress =
+    (asset.file_type === "image" || asset.file_type === "video") &&
+    !asset.is_compressed;
 
   const handleClick = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -84,6 +89,12 @@ export const AssetItem = memo(({ asset }: { asset: Asset }) => {
         onError: () => toast.error("Failed to delete asset"),
       });
     }
+  };
+
+  const handleCompress = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    compressAsset(asset.id);
   };
 
   return (
@@ -166,12 +177,24 @@ export const AssetItem = memo(({ asset }: { asset: Asset }) => {
         </div>
 
         {!isSelectionMode && (
-          <button
-            onClick={handleDelete}
-            className="pointer-events-auto p-2 text-text-muted hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-opacity opacity-0 group-hover:opacity-100 cursor-pointer"
-          >
-            <Trash2 size={16} />
-          </button>
+          <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
+            {canCompress && (
+              <button
+                onClick={handleCompress}
+                className="pointer-events-auto p-2 text-text-muted hover:text-primary hover:bg-primary/10 transition-colors cursor-pointer"
+                title="Compress"
+              >
+                <Zap size={16} />
+              </button>
+            )}
+            <button
+              onClick={handleDelete}
+              className="pointer-events-auto p-2 text-text-muted hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors cursor-pointer"
+              title="Delete"
+            >
+              <Trash2 size={16} />
+            </button>
+          </div>
         )}
 
         <div className="text-[10px] text-text-muted hidden sm:block">

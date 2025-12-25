@@ -1,5 +1,9 @@
 import { useMemo, useEffect, useRef } from "react";
-import { useAssets, useBulkDeleteAssets } from "../../hooks/useAssets";
+import {
+  useAssets,
+  useBulkDeleteAssets,
+  useBulkCompressAssets,
+} from "../../hooks/useAssets";
 import { useStore } from "../../store/useStore";
 import { FilterBar } from "./FilterBar";
 import { AssetItem } from "./AssetItem";
@@ -31,6 +35,7 @@ export function MasterPanel() {
 
   const { data, isLoading } = useAssets(currentPage);
   const { mutate: bulkDelete } = useBulkDeleteAssets();
+  const { mutate: bulkCompress } = useBulkCompressAssets();
   const listRef = useRef<HTMLDivElement>(null);
 
   const processedAssets = useMemo(() => {
@@ -135,6 +140,15 @@ export function MasterPanel() {
     });
   };
 
+  const handleBulkCompress = () => {
+    if (selectedAssetIds.length === 0) return;
+    bulkCompress(selectedAssetIds, {
+      onSuccess: () => {
+        clearSelection();
+      },
+    });
+  };
+
   const handleBulkTag = () => {
     toast.info("Bulk tagging feature coming soon");
   };
@@ -198,6 +212,12 @@ export function MasterPanel() {
             </button>
           </div>
           <div className="flex gap-2">
+            <button
+              onClick={handleBulkCompress}
+              className="px-3 py-1 bg-amber-600 text-white text-xs font-bold rounded hover:bg-amber-700 cursor-pointer"
+            >
+              Compress
+            </button>
             <button
               onClick={handleBulkDelete}
               className="px-3 py-1 bg-red-500 text-white text-xs font-bold rounded hover:bg-red-600 cursor-pointer"

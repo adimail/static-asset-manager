@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"entgo.io/ent"
+	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
@@ -33,6 +34,6 @@ func (Asset) Fields() []ent.Field {
 func (Asset) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("tags", Tag.Type),
-		edge.To("compression_jobs", CompressionJob.Type),
+		edge.To("compression_jobs", CompressionJob.Type).Annotations(entsql.OnDelete(entsql.Cascade)),
 	}
 }

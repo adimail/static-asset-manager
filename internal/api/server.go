@@ -27,8 +27,10 @@ func NewServer(assetService *assets.Service, tagService *tags.Service) http.Hand
 	api.HandleFunc("/assets", h.Upload).Methods("POST")
 	api.HandleFunc("/assets", h.List).Methods("GET")
 	api.HandleFunc("/assets/bulk/delete", h.BulkDelete).Methods("POST")
+	api.HandleFunc("/assets/bulk/compress", h.BulkCompress).Methods("POST")
 	api.HandleFunc("/assets/{id}", h.Delete).Methods("DELETE")
 	api.HandleFunc("/assets/{id}/download", h.Download).Methods("GET")
+	api.HandleFunc("/assets/{id}/compress", h.Compress).Methods("POST")
 	api.HandleFunc("/assets/{id}/tags", th.TagAsset).Methods("POST")
 
 	// Tags

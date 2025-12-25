@@ -47,7 +47,7 @@ var (
 				Symbol:     "compression_jobs_assets_compression_jobs",
 				Columns:    []*schema.Column{CompressionJobsColumns[6]},
 				RefColumns: []*schema.Column{AssetsColumns[0]},
-				OnDelete:   schema.NoAction,
+				OnDelete:   schema.Cascade,
 			},
 		},
 	}

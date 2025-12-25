@@ -11,6 +11,7 @@ import (
 
 	"github.com/adimail/asset-manager/ent"
 	"github.com/adimail/asset-manager/ent/asset"
+	"github.com/adimail/asset-manager/ent/compressionjob"
 	"github.com/adimail/asset-manager/ent/tag"
 	"github.com/adimail/asset-manager/internal/preprocessing"
 	"github.com/google/uuid"
@@ -74,14 +75,45 @@ func (s *Service) Upload(ctx context.Context, req UploadRequest) (*Asset, error)
 		return nil, fmt.Errorf("failed to save metadata: %w", err)
 	}
 
-	// Trigger compression if applicable
-	if fileType == FileTypeImage || fileType == FileTypeVideo {
-		if err := s.preprocessor.Enqueue(context.Background(), saved.ID); err != nil {
-			log.Printf("Failed to enqueue compression job for %s: %v", saved.ID, err)
-		}
-	}
+	// NOTE: Automatic compression removed as per feature request.
+	// User must manually trigger compression.
 
 	return s.mapToDomain(saved), nil
+}
+
+func (s *Service) CompressAsset(ctx context.Context, id string) error {
+	a, err := s.client.Asset.Get(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	ft := FileType(a.FileType)
+	if ft != FileTypeImage && ft != FileTypeVideo {
+		return fmt.Errorf("asset type not supported for compression")
+	}
+
+	if a.IsCompressed {
+		return fmt.Errorf("asset is already compressed")
+	}
+
+	return s.preprocessor.Enqueue(ctx, id)
+}
+
+func (s *Service) CompressMultiple(ctx context.Context, ids []string) error {
+	assets, err := s.client.Asset.Query().Where(asset.IDIn(ids...)).All(ctx)
+	if err != nil {
+		return err
+	}
+
+	for _, a := range assets {
+		ft := FileType(a.FileType)
+		if (ft == FileTypeImage || ft == FileTypeVideo) && !a.IsCompressed {
+			if err := s.preprocessor.Enqueue(ctx, a.ID); err != nil {
+				log.Printf("Failed to enqueue %s: %v", a.ID, err)
+			}
+		}
+	}
+	return nil
 }
 
 func (s *Service) List(ctx context.Context, page, limit int, tagNames []string) (*ListResponse, error) {
@@ -137,22 +169,23 @@ func (s *Service) Delete(ctx context.Context, id string) error {
 		log.Printf("failed to delete file from managed storage: %s, error: %v", a.StoragePath, err)
 	}
 
-	// Also delete original if exists
 	if a.OriginalPath != "" {
 		s.storage.Delete(a.OriginalPath)
+	}
+
+	if _, err := s.client.CompressionJob.Delete().Where(compressionjob.HasAssetWith(asset.ID(id))).Exec(ctx); err != nil {
+		log.Printf("failed to delete compression jobs for asset %s: %v", id, err)
 	}
 
 	return s.client.Asset.DeleteOneID(id).Exec(ctx)
 }
 
 func (s *Service) DeleteMultiple(ctx context.Context, ids []string) error {
-	// 1. Get all assets to find paths
 	assets, err := s.client.Asset.Query().Where(asset.IDIn(ids...)).All(ctx)
 	if err != nil {
 		return err
 	}
 
-	// 2. Delete files
 	for _, a := range assets {
 		if err := s.storage.Delete(a.StoragePath); err != nil {
 			log.Printf("failed to delete file: %v", err)
@@ -162,7 +195,10 @@ func (s *Service) DeleteMultiple(ctx context.Context, ids []string) error {
 		}
 	}
 
-	// 3. Delete from DB
+	if _, err := s.client.CompressionJob.Delete().Where(compressionjob.HasAssetWith(asset.IDIn(ids...))).Exec(ctx); err != nil {
+		return fmt.Errorf("failed to delete associated compression jobs: %w", err)
+	}
+
 	_, err = s.client.Asset.Delete().Where(asset.IDIn(ids...)).Exec(ctx)
 	return err
 }
