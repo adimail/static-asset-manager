@@ -42,10 +42,12 @@ func main() {
 	validator := assets.NewValidator(cfg.Server.MaxUploadSize)
 
 	preprocessor := preprocessing.NewService(client, cfg.Compression)
-	tagService := tags.NewService(client)
-	svc := assets.NewService(client, fs, validator, cfg.Storage.AssetsDir, preprocessor)
 
-	handler := api.NewServer(svc, tagService)
+	// Initialize Asset Service first as Tag Service depends on it for cascading deletes
+	assetService := assets.NewService(client, fs, validator, cfg.Storage.AssetsDir, preprocessor)
+	tagService := tags.NewService(client, assetService)
+
+	handler := api.NewServer(assetService, tagService)
 
 	srv := &http.Server{
 		Addr:         ":" + cfg.Server.Port,

@@ -69,6 +69,26 @@ func (h *AssetHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+func (h *AssetHandler) Update(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	var req struct {
+		OriginalFilename string `json:"original_filename"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	asset, err := h.service.Rename(r.Context(), vars["id"], req.OriginalFilename)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(asset)
+}
+
 func (h *AssetHandler) BulkDelete(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		IDs []string `json:"ids"`

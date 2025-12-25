@@ -75,10 +75,29 @@ func (s *Service) Upload(ctx context.Context, req UploadRequest) (*Asset, error)
 		return nil, fmt.Errorf("failed to save metadata: %w", err)
 	}
 
-	// NOTE: Automatic compression removed as per feature request.
-	// User must manually trigger compression.
-
 	return s.mapToDomain(saved), nil
+}
+
+func (s *Service) Rename(ctx context.Context, id string, newName string) (*Asset, error) {
+	if strings.TrimSpace(newName) == "" {
+		return nil, fmt.Errorf("filename cannot be empty")
+	}
+
+	ext := strings.ToLower(filepath.Ext(newName))
+	if ext == "" {
+		return nil, fmt.Errorf("extension required")
+	}
+	fileType := s.determineFileType(ext)
+
+	a, err := s.client.Asset.UpdateOneID(id).
+		SetOriginalFilename(newName).
+		SetExtension(ext).
+		SetFileType(string(fileType)).
+		Save(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return s.mapToDomain(a), nil
 }
 
 func (s *Service) CompressAsset(ctx context.Context, id string) error {

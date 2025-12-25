@@ -10,10 +10,15 @@ import {
   Music,
   Zap,
   Tag as TagIcon,
+  Pencil,
 } from "lucide-react";
 import { Asset } from "../../api/types";
 import { useStore } from "../../store/useStore";
-import { useDeleteAsset, useCompressAsset } from "../../hooks/useAssets";
+import {
+  useDeleteAsset,
+  useCompressAsset,
+  useUpdateAsset,
+} from "../../hooks/useAssets";
 import { formatBytes } from "../../utils/fileHelpers";
 import { formatDate } from "../../utils/dateHelpers";
 import { toast } from "sonner";
@@ -28,12 +33,17 @@ export function AssetPreview({ asset }: { asset: Asset }) {
   } = useStore();
   const { mutate: deleteAsset } = useDeleteAsset();
   const { mutate: compressAsset } = useCompressAsset();
+  const { mutate: updateAsset } = useUpdateAsset();
+
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [textContent, setTextContent] = useState<string | null>(null);
   const [isLoadingText, setIsLoadingText] = useState(false);
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [editName, setEditName] = useState(asset.original_filename);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
+  const nameInputRef = useRef<HTMLInputElement>(null);
 
   const textExtensions = [
     ".txt",
@@ -101,6 +111,13 @@ export function AssetPreview({ asset }: { asset: Asset }) {
     };
   }, []);
 
+  useEffect(() => {
+    if (isEditingName && nameInputRef.current) {
+      nameInputRef.current.focus();
+      nameInputRef.current.select();
+    }
+  }, [isEditingName]);
+
   const handleDelete = () => {
     deleteAsset(asset.id, {
       onSuccess: () => {
@@ -115,6 +132,26 @@ export function AssetPreview({ asset }: { asset: Asset }) {
 
   const handleCompress = () => {
     compressAsset(asset.id);
+  };
+
+  const handleRename = () => {
+    if (!editName.trim() || editName === asset.original_filename) {
+      setIsEditingName(false);
+      setEditName(asset.original_filename);
+      return;
+    }
+
+    updateAsset(
+      { id: asset.id, original_filename: editName },
+      {
+        onSuccess: () => {
+          setIsEditingName(false);
+        },
+        onError: () => {
+          setEditName(asset.original_filename);
+        },
+      },
+    );
   };
 
   const copyToClipboard = (text: string, field: string) => {
@@ -150,26 +187,55 @@ export function AssetPreview({ asset }: { asset: Asset }) {
           </div>
         ) : (
           <>
-            <div className="flex items-center gap-3 overflow-hidden">
+            <div className="flex items-center gap-3 overflow-hidden flex-1 mr-4">
               <button
                 onClick={() => selectAsset(null)}
                 className="md:hidden p-2 -ml-2 text-text-secondary hover:bg-surface-highlight rounded-full transition-colors cursor-pointer"
               >
                 <ArrowLeft size={20} />
               </button>
-              <div className="flex flex-col">
-                <h2
-                  className="font-semibold text-text-primary truncate max-w-md"
-                  title={asset.original_filename}
-                >
-                  {asset.original_filename}
-                </h2>
+              <div className="flex flex-col min-w-0 w-full">
+                {isEditingName ? (
+                  <div className="flex items-center gap-2 w-full">
+                    <input
+                      ref={nameInputRef}
+                      type="text"
+                      value={editName}
+                      onChange={(e) => setEditName(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") handleRename();
+                        if (e.key === "Escape") {
+                          setIsEditingName(false);
+                          setEditName(asset.original_filename);
+                        }
+                      }}
+                      onBlur={handleRename}
+                      className="w-full bg-surface border border-primary px-2 py-0.5 text-sm font-semibold text-text-primary rounded outline-none"
+                    />
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 group/title">
+                    <h2
+                      className="font-semibold text-text-primary truncate max-w-md cursor-pointer hover:text-primary transition-colors"
+                      title={asset.original_filename}
+                      onClick={() => setIsEditingName(true)}
+                    >
+                      {asset.original_filename}
+                    </h2>
+                    <button
+                      onClick={() => setIsEditingName(true)}
+                      className="opacity-0 group-hover/title:opacity-100 text-text-muted hover:text-primary transition-opacity cursor-pointer"
+                    >
+                      <Pencil size={14} />
+                    </button>
+                  </div>
+                )}
                 <span className="text-xs text-text-muted">
                   {formatBytes(asset.file_size_bytes)}
                 </span>
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-none">
               <button
                 onClick={() => setTagModalOpen(true)}
                 className="p-2 text-text-secondary hover:text-primary hover:bg-primary/10 transition-colors cursor-pointer"

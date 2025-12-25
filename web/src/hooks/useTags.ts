@@ -30,6 +30,27 @@ export function useCreateTag() {
   });
 }
 
+export function useUpdateTag() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (tag: { id: string; name: string; color: string }) => {
+      const { data } = await api.put<Tag>(`/tags/${tag.id}`, {
+        name: tag.name,
+        color: tag.color,
+      });
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tags"] });
+      queryClient.invalidateQueries({ queryKey: ["assets"] });
+      toast.success("Tag updated");
+    },
+    onError: () => {
+      toast.error("Failed to update tag");
+    },
+  });
+}
+
 export function useDeleteTag() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -39,7 +60,10 @@ export function useDeleteTag() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tags"] });
       queryClient.invalidateQueries({ queryKey: ["assets"] });
-      toast.success("Tag deleted");
+      toast.success("Tag and associated assets deleted");
+    },
+    onError: () => {
+      toast.error("Failed to delete tag");
     },
   });
 }

@@ -46,6 +46,27 @@ func (h *TagHandler) List(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(tags)
 }
 
+func (h *TagHandler) Update(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	var req struct {
+		Name  string `json:"name"`
+		Color string `json:"color"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	tag, err := h.service.Update(r.Context(), vars["id"], req.Name, req.Color)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(tag)
+}
+
 func (h *TagHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	if err := h.service.Delete(r.Context(), vars["id"]); err != nil {

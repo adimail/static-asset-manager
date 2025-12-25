@@ -1,9 +1,24 @@
 import { useState, useEffect, useMemo } from "react";
-import { X, Plus, Tag as TagIcon, Check } from "lucide-react";
+import {
+  X,
+  Plus,
+  Tag as TagIcon,
+  Check,
+  Trash2,
+  Pencil,
+  AlertTriangle,
+} from "lucide-react";
 import { useStore } from "../../store/useStore";
-import { useTags, useCreateTag, useBulkTagAssets } from "../../hooks/useTags";
+import {
+  useTags,
+  useCreateTag,
+  useBulkTagAssets,
+  useDeleteTag,
+  useUpdateTag,
+} from "../../hooks/useTags";
 import { useAssets } from "../../hooks/useAssets";
 import clsx from "clsx";
+import { toast } from "sonner";
 
 const COLORS = [
   "#ef4444", // red
@@ -34,10 +49,17 @@ export function TagManagerModal() {
   const { data: assetsData } = useAssets(currentPage);
   const { mutate: createTag, isPending: isCreating } = useCreateTag();
   const { mutate: bulkTag, isPending: isTagging } = useBulkTagAssets();
+  const { mutate: deleteTag } = useDeleteTag();
+  const { mutate: updateTag } = useUpdateTag();
 
   const [newTagName, setNewTagName] = useState("");
   const [selectedColor, setSelectedColor] = useState(COLORS[6]);
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
+
+  const [editingTagId, setEditingTagId] = useState<string | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editColor, setEditColor] = useState("");
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   // Determine target assets
   const targetAssetIds = useMemo(
@@ -70,6 +92,8 @@ export function TagManagerModal() {
     } else if (!isTagModalOpen) {
       setSelectedTagIds([]);
       setNewTagName("");
+      setEditingTagId(null);
+      setDeleteConfirmId(null);
     }
   }, [isTagModalOpen, assetsData, targetAssetIds]);
 
@@ -87,6 +111,7 @@ export function TagManagerModal() {
   };
 
   const toggleTagSelection = (tagId: string) => {
+    if (editingTagId) return;
     setSelectedTagIds((prev) =>
       prev.includes(tagId)
         ? prev.filter((id) => id !== tagId)
@@ -106,6 +131,29 @@ export function TagManagerModal() {
         },
       },
     );
+  };
+
+  const startEditing = (tag: { id: string; name: string; color: string }) => {
+    setEditingTagId(tag.id);
+    setEditName(tag.name);
+    setEditColor(tag.color);
+    setDeleteConfirmId(null);
+  };
+
+  const saveEdit = () => {
+    if (!editingTagId || !editName.trim()) return;
+    updateTag(
+      { id: editingTagId, name: editName, color: editColor },
+      {
+        onSuccess: () => setEditingTagId(null),
+      },
+    );
+  };
+
+  const handleDelete = (id: string) => {
+    deleteTag(id, {
+      onSuccess: () => setDeleteConfirmId(null),
+    });
   };
 
   return (
@@ -194,27 +242,150 @@ export function TagManagerModal() {
                 No tags created yet.
               </div>
             ) : (
-              <div className="flex flex-wrap gap-2">
+              <div className="space-y-2">
                 {tags?.map((tag) => {
                   const isSelected = selectedTagIds.includes(tag.id);
+                  const isEditing = editingTagId === tag.id;
+                  const isDeleting = deleteConfirmId === tag.id;
+
+                  if (isEditing) {
+                    return (
+                      <div
+                        key={tag.id}
+                        className="flex items-center gap-2 p-2 bg-surface-highlight/30 rounded border border-primary/50"
+                      >
+                        <div className="flex-1 flex flex-col gap-2">
+                          <input
+                            type="text"
+                            value={editName}
+                            onChange={(e) => setEditName(e.target.value)}
+                            className="h-8 px-2 bg-surface border border-border rounded text-sm w-full"
+                            autoFocus
+                          />
+                          <div className="flex gap-1.5 flex-wrap">
+                            {COLORS.map((color) => (
+                              <button
+                                key={color}
+                                onClick={() => setEditColor(color)}
+                                className={clsx(
+                                  "w-4 h-4 rounded-full cursor-pointer",
+                                  editColor === color
+                                    ? "ring-2 ring-primary ring-offset-1"
+                                    : "",
+                                )}
+                                style={{ backgroundColor: color }}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <button
+                            onClick={saveEdit}
+                            className="p-1.5 bg-green-500 text-white rounded hover:bg-green-600"
+                          >
+                            <Check size={14} />
+                          </button>
+                          <button
+                            onClick={() => setEditingTagId(null)}
+                            className="p-1.5 bg-surface border border-border text-text-secondary rounded hover:bg-surface-highlight"
+                          >
+                            <X size={14} />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  if (isDeleting) {
+                    return (
+                      <div
+                        key={tag.id}
+                        className="flex flex-col gap-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded"
+                      >
+                        <div className="flex items-start gap-2 text-red-600 dark:text-red-400">
+                          <AlertTriangle size={16} className="mt-0.5" />
+                          <div className="text-xs">
+                            <p className="font-bold">Delete "{tag.name}"?</p>
+                            <p>
+                              This will also delete ALL assets with this tag!
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex justify-end gap-2 mt-1">
+                          <button
+                            onClick={() => setDeleteConfirmId(null)}
+                            className="px-2 py-1 text-xs font-medium bg-white dark:bg-black/20 border border-border rounded hover:bg-surface-highlight"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            onClick={() => handleDelete(tag.id)}
+                            className="px-2 py-1 text-xs font-medium bg-red-500 text-white rounded hover:bg-red-600"
+                          >
+                            Confirm Delete
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  }
+
                   return (
-                    <button
+                    <div
                       key={tag.id}
-                      onClick={() => toggleTagSelection(tag.id)}
                       className={clsx(
-                        "px-3 py-1.5 rounded-full text-sm font-medium border transition-all flex items-center gap-2  cursor-pointer",
+                        "group flex items-center justify-between p-2 rounded border transition-all",
                         isSelected
-                          ? "bg-primary/10 border-primary text-primary shadow-sm"
-                          : "bg-surface border-border text-text-secondary hover:border-primary/50",
+                          ? "bg-primary/10 border-primary"
+                          : "bg-surface border-border hover:border-primary/30",
                       )}
                     >
-                      <span
-                        className="w-2 h-2 rounded-full"
-                        style={{ backgroundColor: tag.color }}
-                      />
-                      {tag.name}
-                      {isSelected && <Check size={14} />}
-                    </button>
+                      <div
+                        className="flex items-center gap-3 flex-1 cursor-pointer"
+                        onClick={() => toggleTagSelection(tag.id)}
+                      >
+                        <div className="relative">
+                          <div
+                            className="w-3 h-3 rounded-full"
+                            style={{ backgroundColor: tag.color }}
+                          />
+                          {isSelected && (
+                            <div className="absolute -top-1 -right-1 bg-primary text-white rounded-full p-0.5">
+                              <Check size={8} />
+                            </div>
+                          )}
+                        </div>
+                        <span
+                          className={clsx(
+                            "text-sm font-medium",
+                            isSelected ? "text-primary" : "text-text-secondary",
+                          )}
+                        >
+                          {tag.name}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            startEditing(tag);
+                          }}
+                          className="p-1.5 text-text-muted hover:text-primary hover:bg-primary/10 rounded cursor-pointer"
+                          title="Edit Tag"
+                        >
+                          <Pencil size={14} />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDeleteConfirmId(tag.id);
+                          }}
+                          className="p-1.5 text-text-muted hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded cursor-pointer"
+                          title="Delete Tag"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </div>
                   );
                 })}
               </div>

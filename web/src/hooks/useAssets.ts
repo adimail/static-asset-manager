@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../api/client";
-import { Assets } from "../api/types";
+import { Assets, Asset } from "../api/types";
 import { toast } from "sonner";
 
 export function useAssets(
@@ -32,6 +32,31 @@ export function useDeleteAsset() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["assets"] });
+    },
+  });
+}
+
+export function useUpdateAsset() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      id,
+      original_filename,
+    }: {
+      id: string;
+      original_filename: string;
+    }) => {
+      const { data } = await api.put<Asset>(`/assets/${id}`, {
+        original_filename,
+      });
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["assets"] });
+      toast.success("Asset renamed");
+    },
+    onError: () => {
+      toast.error("Failed to rename asset");
     },
   });
 }
