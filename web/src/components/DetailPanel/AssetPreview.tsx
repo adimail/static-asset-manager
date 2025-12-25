@@ -1,5 +1,14 @@
 import { useState } from "react";
-import { X, Trash2, Copy, Check, ExternalLink, ArrowLeft } from "lucide-react";
+import {
+  X,
+  Trash2,
+  Copy,
+  Check,
+  ExternalLink,
+  ArrowLeft,
+  FileText,
+  Download,
+} from "lucide-react";
 import { Asset } from "../../api/types";
 import { useStore } from "../../store/useStore";
 import { useDeleteAsset } from "../../hooks/useAssets";
@@ -29,43 +38,33 @@ export function AssetPreview({ asset }: { asset: Asset }) {
   const copyToClipboard = (text: string, field: string) => {
     navigator.clipboard.writeText(text);
     setCopiedField(field);
-    toast.success(`${field === "id" ? "Asset ID" : "URL"} copied to clipboard`);
+    toast.success("Copied to clipboard");
     setTimeout(() => setCopiedField(null), 2000);
   };
 
   const downloadUrl = `/api/v1/assets/${asset.id}/download`;
 
   return (
-    <div
-      className="h-full flex flex-col"
-      role="region"
-      aria-label="Asset preview"
-    >
+    <div className="h-full flex flex-col bg-bg animate-fade-in">
       {/* Header */}
-      <div
-        className={clsx(
-          "h-16 flex-none px-6 flex items-center justify-between border-b border-border transition-colors",
-          showDeleteConfirm ? "bg-red-50 dark:bg-red-900/20" : "bg-surface",
-        )}
-      >
+      <div className="h-16 flex-none px-6 flex items-center justify-between border-b border-border bg-surface/50 backdrop-blur-sm z-10">
         {showDeleteConfirm ? (
-          <div
-            className="flex items-center justify-between w-full"
-            role="alert"
-          >
-            <span className="text-red-600 font-medium">Delete this file?</span>
-            <div className="flex gap-3">
+          <div className="flex items-center justify-between w-full bg-red-50 dark:bg-red-900/20 p-2 border border-red-200 dark:border-red-800 animate-scale-in">
+            <span className="text-red-600 dark:text-red-400 font-medium px-2">
+              Delete this file?
+            </span>
+            <div className="flex gap-2">
               <button
                 onClick={() => setShowDeleteConfirm(false)}
-                className="px-3 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-400"
+                className="px-3 py-1.5 text-sm font-medium text-text-secondary hover:bg-white/50 transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={handleDelete}
-                className="px-3 py-1.5 text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
+                className="px-3 py-1.5 text-sm font-medium text-white bg-red-500 hover:bg-red-600 shadow-sm transition-colors"
               >
-                Confirm Delete
+                Confirm
               </button>
             </div>
           </div>
@@ -74,32 +73,42 @@ export function AssetPreview({ asset }: { asset: Asset }) {
             <div className="flex items-center gap-3 overflow-hidden">
               <button
                 onClick={() => selectAsset(null)}
-                className="md:hidden p-2 -ml-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800"
-                aria-label="Back to list"
+                className="md:hidden p-2 -ml-2 text-text-secondary hover:bg-surface-highlight rounded-full transition-colors"
               >
                 <ArrowLeft size={20} />
               </button>
-              <h2
-                className="font-medium truncate max-w-md"
-                title={asset.original_filename}
-              >
-                {asset.original_filename}
-              </h2>
+              <div className="flex flex-col">
+                <h2
+                  className="font-semibold text-text-primary truncate max-w-md"
+                  title={asset.original_filename}
+                >
+                  {asset.original_filename}
+                </h2>
+                <span className="text-xs text-text-muted">
+                  {formatBytes(asset.file_size_bytes)}
+                </span>
+              </div>
             </div>
             <div className="flex items-center gap-2">
+              <a
+                href={downloadUrl}
+                download
+                className="p-2 text-text-secondary hover:text-primary hover:bg-primary/10 transition-colors"
+                title="Download"
+              >
+                <Download size={18} />
+              </a>
               <button
                 onClick={() => setShowDeleteConfirm(true)}
-                className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors focus:outline-none focus:ring-2 focus:ring-red-500"
+                className="p-2 text-text-secondary hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
                 title="Delete"
-                aria-label="Delete asset"
               >
                 <Trash2 size={18} />
               </button>
               <button
                 onClick={() => selectAsset(null)}
-                className="hidden md:block p-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-primary"
+                className="hidden md:block p-2 text-text-secondary hover:bg-surface-highlight transition-colors"
                 title="Close"
-                aria-label="Close preview"
               >
                 <X size={18} />
               </button>
@@ -109,112 +118,138 @@ export function AssetPreview({ asset }: { asset: Asset }) {
       </div>
 
       {/* Preview Area */}
-      <div className="flex-1 overflow-auto p-0 md:p-8 flex items-center justify-center bg-gray-50 dark:bg-gray-900/50">
-        {asset.file_type === "image" ? (
-          <img
-            src={downloadUrl}
-            alt={asset.original_filename}
-            className="max-w-full max-h-full object-contain shadow-lg"
-          />
-        ) : asset.file_type === "video" ? (
-          <video
-            src={downloadUrl}
-            controls
-            className="max-w-full max-h-full shadow-lg bg-black"
-          />
-        ) : asset.file_type === "audio" ? (
-          <div className="w-full max-w-md bg-white dark:bg-gray-800 p-6 shadow-lg">
-            <div className="flex justify-center mb-6">
-              <div className="w-24 h-24 bg-green-100 dark:bg-green-900/30 flex items-center justify-center rounded-full">
-                <span className="text-4xl">🎵</span>
+      <div className="flex-1 overflow-auto p-4 md:p-8 flex items-center justify-center bg-surface-highlight/30">
+        <div className="relative w-full h-full max-w-4xl max-h-[800px] flex items-center justify-center bg-surface  shadow-sm border border-border overflow-hidden">
+          {asset.file_type === "image" ? (
+            <img
+              src={downloadUrl}
+              alt={asset.original_filename}
+              className="max-w-full max-h-full object-contain"
+            />
+          ) : asset.file_type === "video" ? (
+            <video
+              src={downloadUrl}
+              controls
+              className="max-w-full max-h-full bg-black w-full h-full"
+            />
+          ) : asset.file_type === "audio" ? (
+            <div className="w-full max-w-md p-8 flex flex-col items-center">
+              <div className="w-32 h-32 bg-gradient-to-br from-cyan-400 to-blue-500 rounded-full flex items-center justify-center shadow-lg mb-8 animate-pulse-slow">
+                <span className="text-5xl">🎵</span>
               </div>
+              <h3 className="text-center font-medium mb-6 truncate w-full text-lg">
+                {asset.original_filename}
+              </h3>
+              <audio src={downloadUrl} controls className="w-full" />
             </div>
-            <h3 className="text-center font-medium mb-4 truncate">
-              {asset.original_filename}
-            </h3>
-            <audio src={downloadUrl} controls className="w-full" />
-          </div>
-        ) : asset.file_type === "document" && asset.extension === ".pdf" ? (
-          <object
-            data={downloadUrl}
-            type="application/pdf"
-            className="w-full h-full shadow-lg bg-white"
-          >
-            <div className="flex flex-col items-center justify-center h-full">
-              <p className="mb-4">Unable to display PDF directly.</p>
+          ) : asset.file_type === "document" && asset.extension === ".pdf" ? (
+            <object
+              data={downloadUrl}
+              type="application/pdf"
+              className="w-full h-full bg-white"
+            >
+              <div className="flex flex-col items-center justify-center h-full text-text-muted">
+                <p className="mb-4">Preview not available</p>
+                <a href={downloadUrl} className="text-primary hover:underline">
+                  Download PDF
+                </a>
+              </div>
+            </object>
+          ) : (
+            <div className="text-center p-8">
+              <div className="w-24 h-24 bg-surface-highlight  mx-auto mb-6 flex items-center justify-center">
+                <FileText size={48} className="text-text-muted" />
+              </div>
+              <p className="text-text-secondary mb-4">
+                No preview available for this file type
+              </p>
               <a
                 href={downloadUrl}
                 download
-                className="inline-flex items-center gap-2 text-primary hover:underline"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white hover:bg-primary-hover transition-colors shadow-lg shadow-primary/25"
               >
-                <ExternalLink size={16} /> Download PDF
+                <Download size={16} /> Download File
               </a>
             </div>
-          </object>
-        ) : (
-          <div className="text-center">
-            <div className="w-24 h-24 bg-gray-200 dark:bg-gray-700 mx-auto mb-4 flex items-center justify-center">
-              <span className="text-4xl">📦</span>
-            </div>
-            <p className="text-gray-500">No preview available</p>
-            <a
-              href={downloadUrl}
-              download
-              className="inline-flex items-center gap-2 mt-4 text-primary hover:underline"
-            >
-              <ExternalLink size={16} /> Download File
-            </a>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
-      {/* Metadata Footer */}
-      <div className="flex-none bg-bg border-t border-border p-6">
-        <h3 className="font-medium mb-4">File Information</h3>
-        <div className="grid grid-cols-[120px_1fr] gap-y-3 text-sm">
-          <span className="text-gray-500">Type</span>
-          <span className="capitalize">{asset.file_type} Document</span>
-
-          <span className="text-gray-500">Size</span>
-          <span>
-            {formatBytes(asset.file_size_bytes)} (
-            {asset.file_size_bytes.toLocaleString()} bytes)
-          </span>
-
-          <span className="text-gray-500">Uploaded</span>
-          <span>{formatDate(asset.created_at)}</span>
-
-          <span className="text-gray-500">Asset ID</span>
-          <div className="flex items-center gap-2">
-            <span className="font-mono text-xs">{asset.id}</span>
-            <button
-              onClick={() => copyToClipboard(asset.id, "id")}
-              className="text-primary hover:bg-blue-50 dark:hover:bg-blue-900/20 px-2 py-0.5 border border-primary/30 flex items-center gap-1 focus:outline-none focus:ring-2 focus:ring-primary"
-              aria-label="Copy Asset ID"
-            >
-              {copiedField === "id" ? <Check size={10} /> : <Copy size={10} />}
-              {copiedField === "id" ? "Copied!" : "Copy"}
-            </button>
+      {/* Metadata Panel */}
+      <div className="flex-none bg-surface border-t border-border p-6 md:p-8">
+        <h3 className="font-semibold text-lg mb-6 text-text-primary">
+          File Information
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-4">
+            <InfoRow
+              label="Type"
+              value={`${asset.file_type} (${asset.extension})`}
+            />
+            <InfoRow
+              label="Size"
+              value={`${formatBytes(asset.file_size_bytes)}`}
+            />
+            <InfoRow label="Uploaded" value={formatDate(asset.created_at)} />
           </div>
-
-          <span className="text-gray-500">Public URL</span>
-          <div className="flex items-center gap-2">
-            <span className="font-mono text-xs truncate max-w-[200px]">
-              {downloadUrl}
-            </span>
-            <button
-              onClick={() =>
-                copyToClipboard(window.location.origin + downloadUrl, "url")
-              }
-              className="text-primary hover:bg-blue-50 dark:hover:bg-blue-900/20 px-2 py-0.5 border border-primary/30 flex items-center gap-1 focus:outline-none focus:ring-2 focus:ring-primary"
-              aria-label="Copy Public URL"
-            >
-              {copiedField === "url" ? <Check size={10} /> : <Copy size={10} />}
-              {copiedField === "url" ? "Copied!" : "Copy"}
-            </button>
+          <div className="space-y-4">
+            <div className="group">
+              <label className="text-xs font-medium text-text-muted uppercase tracking-wider mb-1 block">
+                Asset ID
+              </label>
+              <div className="flex items-center gap-2 bg-surface-highlight p-2 border border-border group-hover:border-primary/30 transition-colors">
+                <code className="text-xs font-mono text-text-secondary flex-1 truncate">
+                  {asset.id}
+                </code>
+                <button
+                  onClick={() => copyToClipboard(asset.id, "id")}
+                  className="text-text-muted hover:text-primary transition-colors"
+                >
+                  {copiedField === "id" ? (
+                    <Check size={14} />
+                  ) : (
+                    <Copy size={14} />
+                  )}
+                </button>
+              </div>
+            </div>
+            <div className="group">
+              <label className="text-xs font-medium text-text-muted uppercase tracking-wider mb-1 block">
+                Public URL
+              </label>
+              <div className="flex items-center gap-2 bg-surface-highlight p-2 border border-border group-hover:border-primary/30 transition-colors">
+                <code className="text-xs font-mono text-text-secondary flex-1 truncate">
+                  {window.location.origin}
+                  {downloadUrl}
+                </code>
+                <button
+                  onClick={() =>
+                    copyToClipboard(window.location.origin + downloadUrl, "url")
+                  }
+                  className="text-text-muted hover:text-primary transition-colors"
+                >
+                  {copiedField === "url" ? (
+                    <Check size={14} />
+                  ) : (
+                    <Copy size={14} />
+                  )}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+function InfoRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex flex-col">
+      <span className="text-xs font-medium text-text-muted uppercase tracking-wider mb-1">
+        {label}
+      </span>
+      <span className="text-sm text-text-primary font-medium">{value}</span>
     </div>
   );
 }

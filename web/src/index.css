@@ -2,56 +2,126 @@
 
 @theme {
   --color-bg: var(--color-bg);
+  --color-sidebar: var(--color-sidebar);
   --color-surface: var(--color-surface);
+  --color-surface-highlight: var(--color-surface-highlight);
   --color-border: var(--color-border);
-  --color-selected-bg: var(--color-selected-bg);
-  --color-selected-border: var(--color-selected-border);
+
   --color-primary: var(--color-primary);
   --color-primary-hover: var(--color-primary-hover);
+  --color-primary-light: var(--color-primary-light);
 
-  --font-sans:
-    "Inter", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "sans-serif";
-  --font-mono: "JetBrains Mono", "Fira Code", "Courier New", "monospace";
+  --color-text-primary: var(--color-text-primary);
+  --color-text-secondary: var(--color-text-secondary);
+  --color-text-muted: var(--color-text-muted);
+
+  --font-sans: "Inter", "SF Pro Display", -apple-system, system-ui, sans-serif;
+
+  --animate-fade-in: fadeIn 0.3s ease-out;
+  --animate-slide-up: slideUp 0.4s ease-out;
+  --animate-scale-in: scaleIn 0.2s ease-out;
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  @keyframes slideUp {
+    from {
+      transform: translateY(10px);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+  @keyframes scaleIn {
+    from {
+      transform: scale(0.95);
+      opacity: 0;
+    }
+    to {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
 }
 
 :root {
-  --color-bg: #fafafa;
-  --color-surface: #ffffff;
-  --color-border: #e5e5e5;
-  --color-selected-bg: #f0f7ff;
-  --color-selected-border: #2563eb;
-  --color-primary: #2563eb;
-  --color-primary-hover: #1d4ed8;
+  /* Light Mode – Warm / Soft */
+  --color-bg: #fff7cc; /* pale cream */
+  --color-sidebar: #ffffff;
+  --color-surface: #fffdf2;
+  --color-surface-highlight: #f3d27a; /* soft yellow */
+  --color-border: rgba(180, 120, 60, 0.25);
+
+  --color-primary: #d98b45; /* warm orange */
+  --color-primary-hover: #c77734;
+  --color-primary-light: rgba(217, 139, 69, 0.18);
+
+  --color-text-primary: #6b3f1d; /* deep warm brown */
+  --color-text-secondary: #9a6a3a;
+  --color-text-muted: #c59a6a;
 }
 
 .dark {
-  --color-bg: #1a1a1a;
-  --color-surface: #262626;
-  --color-border: #404040;
-  --color-selected-bg: #1e3a8a;
-  --color-selected-border: #3b82f6;
-  --color-primary: #3b82f6;
-  --color-primary-hover: #2563eb;
+  /* Dark Mode – Blue Slate */
+  --color-bg: #23394d; /* darkest top blue */
+  --color-sidebar: #2f4a63;
+  --color-surface: #2f4a63;
+  --color-surface-highlight: #4f667f; /* mid slate blue */
+  --color-border: rgba(255, 255, 255, 0.14);
+
+  --color-primary: #3b5f82; /* muted steel blue */
+  --color-primary-hover: #4a7399;
+  --color-primary-light: rgba(59, 95, 130, 0.25);
+
+  --color-text-primary: #cdcdcd; /* light gray */
+  --color-text-secondary: #c4ccd3;
+  --color-text-muted: #9aa6b2;
 }
 
 body {
   background-color: var(--color-bg);
-  @apply text-gray-900 dark:text-gray-100 font-sans antialiased;
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
 }
 
+/* Custom Scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
-
 ::-webkit-scrollbar-track {
-  @apply bg-transparent;
+  background: transparent;
 }
-
 ::-webkit-scrollbar-thumb {
-  @apply bg-gray-300 dark:bg-gray-600;
+  background: var(--color-border);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-muted);
 }
 
-::-webkit-scrollbar-thumb:hover {
-  @apply bg-gray-400 dark:bg-gray-500;
+/* Glassmorphism Utilities */
+.glass {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+.dark .glass {
+  background: rgba(30, 41, 59, 0.7);
+}
+
+/* Gradient Text */
+.text-gradient {
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-image: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
 }

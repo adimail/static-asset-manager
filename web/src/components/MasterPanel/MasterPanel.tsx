@@ -83,23 +83,28 @@ export function MasterPanel() {
   }, [filteredAssets, selectedAssetId, selectAsset]);
 
   return (
-    <div className="flex flex-col h-full bg-bg border-r border-border">
+    <div className="flex flex-col h-full bg-gradient-to-b from-sidebar to-bg border-r border-border">
       <FilterBar />
 
       <div
         ref={listRef}
-        className="flex-1 overflow-y-auto p-4 space-y-2"
+        className="flex-1 overflow-y-auto p-3 space-y-2"
         role="list"
         aria-label="Asset list"
       >
         {isLoading ? (
-          <div className="flex justify-center p-8 text-gray-400" role="status">
-            Loading assets...
+          <div className="flex flex-col items-center justify-center h-32 space-y-3">
+            <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+            <span className="text-sm text-text-muted">Loading assets...</span>
           </div>
         ) : filteredAssets.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-64 text-gray-400">
-            <FolderOpen size={48} className="mb-4 opacity-50" />
-            <p className="text-lg font-medium">No files found</p>
+          <div className="flex flex-col items-center justify-center h-64 text-text-muted animate-fade-in">
+            <div className="w-16 h-16 bg-surface-highlight rounded-full flex items-center justify-center mb-4">
+              <FolderOpen size={32} className="opacity-50" />
+            </div>
+            <p className="text-lg font-medium text-text-primary">
+              No files found
+            </p>
             <p className="text-sm">Try adjusting your filters</p>
           </div>
         ) : (

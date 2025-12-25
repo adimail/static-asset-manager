@@ -21,7 +21,7 @@ export function DetailPanel() {
   return (
     <div className="h-full flex flex-col items-center justify-center text-gray-400">
       <FolderOpen size={64} className="mb-6 opacity-20" />
-      <h2 className="text-lg font-medium text-gray-900 dark:text-gray-100">
+      <h2 className="text-lg font-medium text-gray-500">
         Select an asset to preview
       </h2>
       <p className="text-sm mt-2">
