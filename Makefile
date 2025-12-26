@@ -25,3 +25,6 @@ dev-backend: generate
 dev-frontend:
 	@echo "Starting frontend dev server (http://localhost:5173)..."
 	cd web && npm run dev
+
+deploy:
+	wrangler pages deploy cdn --project-name orion-static-cdn
