@@ -4,8 +4,7 @@ generate:
 	@echo "Generating Ent code..."
 	go run -mod=mod entgo.io/ent/cmd/ent generate ./ent/schema
 
-run: generate
-	cd web && npm run build
+run:
 	go run cmd/server/main.go
 
 build: generate
@@ -25,3 +24,6 @@ dev-backend: generate
 dev-frontend:
 	@echo "Starting frontend dev server (http://localhost:5173)..."
 	cd web && npm run dev
+
+deploy:
+	wrangler pages deploy cdn --project-name orion-static-cdn
