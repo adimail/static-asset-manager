@@ -28,12 +28,12 @@ const IconMap = {
 };
 
 const ColorMap = {
-  image: "text-purple-500 bg-purple-500/10",
-  video: "text-pink-500 bg-pink-500/10",
-  audio: "text-cyan-500 bg-cyan-500/10",
-  document: "text-blue-500 bg-blue-500/10",
-  other: "text-gray-500 bg-gray-500/10",
-  code: "text-green-500 bg-green-500/10",
+  image: "text-purple-400 bg-purple-500/10",
+  video: "text-pink-400 bg-pink-500/10",
+  audio: "text-cyan-400 bg-cyan-500/10",
+  document: "text-blue-400 bg-blue-500/10",
+  other: "text-gray-400 bg-gray-500/10",
+  code: "text-emerald-400 bg-emerald-500/10",
 };
 
 export const AssetItem = memo(
@@ -169,14 +169,16 @@ export const AssetItem = memo(
               />
             )}
             {asset.is_compressed && (
-              <div className="absolute bottom-0 right-0 bg-green-500 text-white text-[8px] px-1 font-bold">
-                ZIP
+              <div className="absolute bottom-0 right-0 bg-emerald-600 text-white text-[8px] px-1 font-bold">
+                {asset.compression_ratio && asset.compression_ratio < 1
+                  ? `-${Math.round((1 - asset.compression_ratio) * 100)}%`
+                  : "OPT"}
               </div>
             )}
           </div>
 
           <div className="flex-1 min-w-0 w-full">
-            <h3 className="text-sm font-medium truncate text-primary">
+            <h3 className="text-sm font-medium truncate text-text-primary">
               {asset.original_filename}
             </h3>
             <div
@@ -211,7 +213,7 @@ export const AssetItem = memo(
                       key={t.id}
                       className="px-1.5 py-0.5 rounded text-[9px] font-medium border border-transparent"
                       style={{
-                        backgroundColor: `${t.color}15`,
+                        backgroundColor: `${t.color}25`,
                         color: t.color,
                       }}
                     >
@@ -247,7 +249,7 @@ export const AssetItem = memo(
               )}
               <button
                 onClick={handleDelete}
-                className="pointer-events-auto p-2 text-text-muted hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors cursor-pointer"
+                className="pointer-events-auto p-2 text-text-muted hover:text-red-500 hover:bg-red-900/20 transition-colors cursor-pointer"
                 title="Delete"
               >
                 <Trash2 size={16} />
@@ -265,3 +267,4 @@ export const AssetItem = memo(
     );
   },
 );
+

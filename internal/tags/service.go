@@ -43,26 +43,6 @@ func (s *Service) Update(ctx context.Context, id, name, color string) (*ent.Tag,
 }
 
 func (s *Service) Delete(ctx context.Context, id string) error {
-	// Find all assets associated with this tag
-	assets, err := s.client.Tag.Query().Where(tag.ID(id)).QueryAssets().All(ctx)
-	if err != nil {
-		return err
-	}
-
-	// Collect IDs
-	assetIDs := make([]string, len(assets))
-	for i, a := range assets {
-		assetIDs[i] = a.ID
-	}
-
-	// Delete assets if any exist
-	if len(assetIDs) > 0 {
-		if err := s.assetDeleter.DeleteMultiple(ctx, assetIDs); err != nil {
-			return err
-		}
-	}
-
-	// Finally delete the tag
 	return s.client.Tag.DeleteOneID(id).Exec(ctx)
 }
 

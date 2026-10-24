@@ -20,7 +20,6 @@ const queryClient = new QueryClient({
 
 function App() {
   const {
-    theme,
     setUploadOpen,
     triggerSearchFocus,
     selectAsset,
@@ -34,18 +33,9 @@ function App() {
 
   useEffect(() => {
     const root = window.document.documentElement;
-    root.classList.remove("light", "dark");
-
-    if (theme === "system") {
-      const systemTheme = window.matchMedia("(prefers-color-scheme: dark)")
-        .matches
-        ? "dark"
-        : "light";
-      root.classList.add(systemTheme);
-    } else {
-      root.classList.add(theme);
-    }
-  }, [theme]);
+    root.classList.remove("light");
+    root.classList.add("dark");
+  }, []);
 
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
@@ -96,16 +86,16 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
-        <div className="h-screen flex flex-col overflow-hidden bg-bg text-gray-900 dark:text-gray-100 transition-colors duration-200">
+        <div className="h-screen flex flex-col overflow-hidden bg-bg text-gray-100">
           <Toaster
             position="top-right"
             richColors
             closeButton
-            theme={theme === "system" ? "system" : theme}
+            theme="dark"
             toastOptions={{
               style: {
-                background: theme === "light" ? "#fefce8" : "#1e293b",
-                color: theme === "light" ? "#451a03" : "#f1f5f9",
+                background: "#171920",
+                color: "#f8fafc",
                 border: "1px solid var(--color-border)",
               },
             }}

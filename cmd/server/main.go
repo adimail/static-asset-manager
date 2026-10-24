@@ -28,7 +28,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	client, err := ent.Open("sqlite3", "file:"+cfg.Database.Path+"?cache=shared&_fk=1")
+	client, err := ent.Open("sqlite3", "file:"+cfg.Database.Path+"?_journal_mode=WAL&_busy_timeout=5000&_fk=1")
 	if err != nil {
 		log.Fatalf("failed opening connection to sqlite: %v", err)
 	}
@@ -43,7 +43,6 @@ func main() {
 
 	preprocessor := preprocessing.NewService(client, cfg.Compression)
 
-	// Initialize Asset Service first as Tag Service depends on it for cascading deletes
 	assetService := assets.NewService(client, fs, validator, cfg.Storage.AssetsDir, preprocessor)
 	tagService := tags.NewService(client, assetService)
 

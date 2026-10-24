@@ -18,20 +18,19 @@ import {
 } from "../../hooks/useTags";
 import { useAssets } from "../../hooks/useAssets";
 import clsx from "clsx";
-import { toast } from "sonner";
 
 const COLORS = [
-  "#ef4444", // red
-  "#f97316", // orange
-  "#f59e0b", // amber
-  "#84cc16", // lime
-  "#22c55e", // green
-  "#06b6d4", // cyan
-  "#3b82f6", // blue
-  "#6366f1", // indigo
-  "#a855f7", // purple
-  "#ec4899", // pink
-  "#64748b", // slate
+  "#ef4444",
+  "#f97316",
+  "#f59e0b",
+  "#84cc16",
+  "#22c55e",
+  "#06b6d4",
+  "#3b82f6",
+  "#6366f1",
+  "#a855f7",
+  "#ec4899",
+  "#64748b",
 ];
 
 export function TagManagerModal() {
@@ -61,7 +60,6 @@ export function TagManagerModal() {
   const [editColor, setEditColor] = useState("");
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
-  // Determine target assets
   const targetAssetIds = useMemo(
     () =>
       isSelectionMode
@@ -72,7 +70,6 @@ export function TagManagerModal() {
     [isSelectionMode, selectedAssetIds, selectedAssetId],
   );
 
-  // Pre-select tags based on target assets
   useEffect(() => {
     if (isTagModalOpen && assetsData?.assets && targetAssetIds.length > 0) {
       const targets = assetsData.assets.filter((a) =>
@@ -80,7 +77,6 @@ export function TagManagerModal() {
       );
 
       if (targets.length > 0) {
-        // Find intersection of tags: tags present in ALL selected assets
         const firstAssetTags = targets[0].tags.map((t) => t.id);
         const commonTags = firstAssetTags.filter((tagId) =>
           targets.every((a) => a.tags.some((t) => t.id === tagId)),
@@ -159,7 +155,6 @@ export function TagManagerModal() {
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
       <div className="bg-surface border border-border w-full max-w-lg shadow-2xl animate-scale-in flex flex-col max-h-[80vh]">
-        {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-border">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-primary/10 rounded-full">
@@ -184,9 +179,7 @@ export function TagManagerModal() {
           </button>
         </div>
 
-        {/* Body */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
-          {/* Create New Tag */}
           <form
             onSubmit={handleCreate}
             className="space-y-3 bg-surface-highlight/20 p-4 rounded-lg border border-border/50"
@@ -205,7 +198,7 @@ export function TagManagerModal() {
               <button
                 type="submit"
                 disabled={isCreating || !newTagName.trim()}
-                className="px-4 bg-primary text-white font-medium rounded hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="px-4 bg-primary text-background font-medium rounded hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 <Plus size={20} />
               </button>
@@ -228,7 +221,6 @@ export function TagManagerModal() {
             </div>
           </form>
 
-          {/* Tag List */}
           <div className="space-y-3">
             <label className="text-xs font-bold uppercase tracking-widest text-text-muted">
               Available Tags
@@ -300,21 +292,22 @@ export function TagManagerModal() {
                     return (
                       <div
                         key={tag.id}
-                        className="flex flex-col gap-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded"
+                        className="flex flex-col gap-2 p-3 bg-red-950/40 border border-red-800 rounded"
                       >
-                        <div className="flex items-start gap-2 text-red-600 dark:text-red-400">
+                        <div className="flex items-start gap-2 text-red-400">
                           <AlertTriangle size={16} className="mt-0.5" />
                           <div className="text-xs">
                             <p className="font-bold">Delete "{tag.name}"?</p>
                             <p>
-                              This will also delete ALL assets with this tag!
+                              This will remove the tag from all associated
+                              assets.
                             </p>
                           </div>
                         </div>
                         <div className="flex justify-end gap-2 mt-1">
                           <button
                             onClick={() => setDeleteConfirmId(null)}
-                            className="px-2 py-1 text-xs font-medium bg-white dark:bg-black/20 border border-border rounded hover:bg-surface-highlight"
+                            className="px-2 py-1 text-xs font-medium bg-surface border border-border rounded hover:bg-surface-highlight text-text-secondary"
                           >
                             Cancel
                           </button>
@@ -349,7 +342,7 @@ export function TagManagerModal() {
                             style={{ backgroundColor: tag.color }}
                           />
                           {isSelected && (
-                            <div className="absolute -top-1 -right-1 bg-primary text-white rounded-full p-0.5">
+                            <div className="absolute -top-1 -right-1 bg-primary text-background rounded-full p-0.5">
                               <Check size={8} />
                             </div>
                           )}
@@ -379,7 +372,7 @@ export function TagManagerModal() {
                             e.stopPropagation();
                             setDeleteConfirmId(tag.id);
                           }}
-                          className="p-1.5 text-text-muted hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded cursor-pointer"
+                          className="p-1.5 text-text-muted hover:text-red-500 hover:bg-red-900/20 rounded cursor-pointer"
                           title="Delete Tag"
                         >
                           <Trash2 size={14} />
@@ -393,7 +386,6 @@ export function TagManagerModal() {
           </div>
         </div>
 
-        {/* Footer */}
         <div className="p-6 border-t border-border bg-surface-highlight/10 flex justify-end gap-3">
           <button
             onClick={() => setTagModalOpen(false)}
@@ -404,7 +396,7 @@ export function TagManagerModal() {
           <button
             onClick={handleApply}
             disabled={targetAssetIds.length === 0 || isTagging}
-            className="px-6 py-2 bg-primary text-white font-medium rounded hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-lg"
+            className="px-6 py-2 bg-primary text-background font-medium rounded hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-lg"
           >
             {isTagging ? "Applying..." : "Apply Tags"}
           </button>

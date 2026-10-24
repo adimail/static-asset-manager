@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { FileType } from "../api/types";
 
-type Theme = "light" | "dark" | "system";
+type Theme = "dark";
 type SortOption =
   | "newest"
   | "oldest"
@@ -61,8 +61,8 @@ interface AppState {
 export const useStore = create<AppState>()(
   persist(
     (set) => ({
-      theme: "system",
-      setTheme: (theme) => set({ theme }),
+      theme: "dark",
+      setTheme: () => set({ theme: "dark" }),
       masterPanelWidth: 40,
       setMasterPanelWidth: (width) => set({ masterPanelWidth: width }),
       selectedAssetId: null,
@@ -136,7 +136,7 @@ export const useStore = create<AppState>()(
     {
       name: "asset-manager-storage",
       partialize: (state) => ({
-        theme: state.theme,
+        theme: "dark" as const,
         masterPanelWidth: state.masterPanelWidth,
         sortOrder: state.sortOrder,
         viewMode: state.viewMode,
