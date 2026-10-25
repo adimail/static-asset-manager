@@ -139,10 +139,20 @@ func (h *AssetHandler) Download(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Security-Policy", "default-src 'none'; style-src 'unsafe-inline'; sandbox")
+	w.Header().Set("Accept-Ranges", "bytes")
 	w.Header().Set("X-Content-Type-Options", "nosniff")
-	if asset.FileType == "document" || asset.Extension == ".svg" || asset.Extension == ".html" {
+
+	if asset.Extension == ".svg" || asset.Extension == ".html" || asset.FileType == "document" {
+		w.Header().Set("Content-Security-Policy", "default-src 'none'; sandbox")
 		w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%q", asset.OriginalFilename))
+	} else {
+		if asset.FileType == "video" {
+			w.Header().Set("Content-Type", "video/mp4")
+		} else if asset.FileType == "audio" {
+			w.Header().Set("Content-Type", "audio/mpeg")
+		} else if asset.MimeType != "" {
+			w.Header().Set("Content-Type", asset.MimeType)
+		}
 	}
 
 	http.ServeFile(w, r, asset.StoragePath)
@@ -157,7 +167,7 @@ func (h *AssetHandler) Thumbnail(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", mime)
-	w.Header().Set("Cache-Control", "public, max-age=86400, stale-while-revalidate=604800")
+	w.Header().Set("Cache-Control", "public, max-age=86400")
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	http.ServeFile(w, r, path)
 }

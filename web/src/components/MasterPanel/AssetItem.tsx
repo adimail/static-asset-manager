@@ -1,4 +1,4 @@
-import { memo } from "react";
+import { memo, useState } from "react";
 import {
   FileText,
   Image,
@@ -9,9 +9,7 @@ import {
   CheckSquare,
   Square,
   Zap,
-  Globe,
-  HardDrive,
-  AlertCircle,
+  Play,
 } from "lucide-react";
 import { Asset } from "../../api/types";
 import { useStore } from "../../store/useStore";
@@ -30,15 +28,6 @@ const IconMap = {
   code: FileText,
 };
 
-const ColorMap = {
-  image: "text-purple-400 bg-purple-500/10",
-  video: "text-pink-400 bg-pink-500/10",
-  audio: "text-cyan-400 bg-cyan-500/10",
-  document: "text-blue-400 bg-blue-500/10",
-  other: "text-gray-400 bg-gray-500/10",
-  code: "text-emerald-400 bg-emerald-500/10",
-};
-
 export const AssetItem = memo(
   ({ asset, viewMode }: { asset: Asset; viewMode: "list" | "grid" }) => {
     const {
@@ -51,11 +40,11 @@ export const AssetItem = memo(
     } = useStore();
     const { mutate: deleteAsset } = useDeleteAsset();
     const { mutate: compressAsset } = useCompressAsset();
+    const [imgError, setImgError] = useState(false);
 
     const isSelected = selectedAssetId === asset.id;
     const isChecked = selectedAssetIds.includes(asset.id);
     const Icon = IconMap[asset.file_type] || File;
-    const colorClass = ColorMap[asset.file_type] || ColorMap.other;
     const canCompress =
       (asset.file_type === "image" || asset.file_type === "video") &&
       !asset.is_compressed;
@@ -101,6 +90,96 @@ export const AssetItem = memo(
       compressAsset(asset.id);
     };
 
+    if (viewMode === "list") {
+      return (
+        <div
+          id={`asset-${asset.id}`}
+          onClick={handleClick}
+          role="listitem"
+          tabIndex={0}
+          className={clsx(
+            "group relative flex items-center gap-3 p-2.5 rounded-lg border transition-all cursor-pointer outline-none bg-surface",
+            isSelected
+              ? "border-primary ring-1 ring-primary shadow-sm"
+              : "border-border hover:border-border-focused hover:bg-surface-hover",
+            isChecked && "bg-primary-light border-primary/40",
+          )}
+        >
+          {isSelectionMode && (
+            <div className="flex-none text-primary">
+              {isChecked ? (
+                <CheckSquare size={16} />
+              ) : (
+                <Square size={16} className="text-text-muted" />
+              )}
+            </div>
+          )}
+
+          <div className="w-10 h-10 flex-none rounded bg-surface-highlight flex items-center justify-center overflow-hidden relative">
+            {(asset.file_type === "image" || asset.file_type === "video") &&
+            !imgError ? (
+              <img
+                src={`/api/v1/assets/${asset.id}/thumbnail`}
+                alt={asset.original_filename}
+                onError={() => setImgError(true)}
+                className="w-full h-full object-cover"
+                loading="lazy"
+              />
+            ) : (
+              <Icon size={18} className="text-text-muted" />
+            )}
+          </div>
+
+          <div className="flex-1 min-w-0">
+            <h4
+              className="text-xs font-medium text-text-primary truncate"
+              title={asset.original_filename}
+            >
+              {asset.original_filename}
+            </h4>
+            <div className="flex items-center gap-2 mt-0.5 text-[10px] text-text-muted">
+              <span>{formatBytes(asset.file_size_bytes)}</span>
+              <span>•</span>
+              <span className="uppercase">
+                {asset.extension.replace(".", "")}
+              </span>
+              <span>•</span>
+              <span>{formatDate(asset.created_at)}</span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 flex-none">
+            {asset.cdn_status === "live" && (
+              <span className="px-1.5 py-0.5 rounded text-[9px] font-bold tracking-wider uppercase bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                CDN
+              </span>
+            )}
+
+            {!isSelectionMode && (
+              <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
+                {canCompress && (
+                  <button
+                    onClick={handleCompress}
+                    className="p-1 text-text-muted hover:text-primary rounded cursor-pointer"
+                    title="Optimize"
+                  >
+                    <Zap size={14} />
+                  </button>
+                )}
+                <button
+                  onClick={handleDelete}
+                  className="p-1 text-text-muted hover:text-red-400 rounded cursor-pointer"
+                  title="Delete"
+                >
+                  <Trash2 size={14} />
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div
         id={`asset-${asset.id}`}
@@ -108,184 +187,100 @@ export const AssetItem = memo(
         role="listitem"
         tabIndex={0}
         className={clsx(
-          "group relative cursor-pointer border outline-none transition-all duration-200",
-          viewMode === "list" ? "p-3" : "p-4 flex flex-col items-center",
-          isSelected && !isSelectionMode
-            ? "bg-primary-light border-primary/30 shadow-sm"
-            : "bg-transparent border-transparent hover:bg-surface hover:shadow-md hover:border-border/50",
-          isChecked && isSelectionMode && "bg-primary/10 border-primary/30",
+          "group relative flex flex-col rounded-xl border transition-all cursor-pointer outline-none bg-surface overflow-hidden shadow-sm aspect-square",
+          isSelected
+            ? "border-primary ring-2 ring-primary shadow-lg scale-[1.01]"
+            : "border-border hover:border-border-focused hover:shadow-md",
+          isChecked && "ring-2 ring-primary border-primary",
         )}
       >
-        {isSelected && !isSelectionMode && (
-          <div
-            className={clsx(
-              "absolute bg-primary",
-              viewMode === "list"
-                ? "left-0 top-3 bottom-3 w-1 rounded-r-full"
-                : "inset-0 border-2 border-primary bg-transparent pointer-events-none rounded",
-            )}
-          />
-        )}
-
-        <div
-          className={clsx(
-            "flex pointer-events-none w-full",
-            viewMode === "list"
-              ? "items-center gap-4"
-              : "flex-col items-center gap-3 text-center",
-          )}
-        >
-          {isSelectionMode && (
-            <div
-              className={clsx(
-                "pointer-events-auto text-primary z-10",
-                viewMode === "grid" && "absolute top-2 left-2",
-              )}
-            >
-              {isChecked ? (
-                <CheckSquare size={20} />
-              ) : (
-                <Square size={20} className="text-text-muted" />
-              )}
+        <div className="relative w-full h-full bg-[#090b10] flex items-center justify-center overflow-hidden">
+          {(asset.file_type === "image" || asset.file_type === "video") &&
+          !imgError ? (
+            <img
+              src={`/api/v1/assets/${asset.id}/thumbnail`}
+              alt={asset.original_filename}
+              onError={() => setImgError(true)}
+              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+              loading="lazy"
+            />
+          ) : (
+            <div className="flex flex-col items-center justify-center gap-2 p-4 text-center">
+              <Icon size={32} className="text-text-muted/50" />
+              <span className="text-[10px] uppercase font-bold tracking-wider text-text-muted">
+                {asset.extension}
+              </span>
             </div>
           )}
 
-          <div
-            className={clsx(
-              "flex-none overflow-hidden flex items-center justify-center relative",
-              asset.file_type === "image" || asset.file_type === "video"
-                ? "bg-surface-highlight"
-                : colorClass,
-              viewMode === "list"
-                ? "w-12 h-12"
-                : "w-full aspect-square rounded bg-surface-highlight/20",
-            )}
-          >
-            {asset.file_type === "image" || asset.file_type === "video" ? (
-              <img
-                src={`/api/v1/assets/${asset.id}/thumbnail`}
-                alt=""
-                className="w-full h-full object-cover"
-                loading="lazy"
-              />
+          {asset.file_type === "video" && (
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <div className="w-10 h-10 rounded-full bg-black/60 backdrop-blur-xs flex items-center justify-center text-white/90 shadow-md">
+                <Play size={18} className="ml-0.5" />
+              </div>
+            </div>
+          )}
+
+          <div className="absolute top-2.5 left-2.5 z-10 flex items-center gap-1.5">
+            {isSelectionMode ? (
+              <div className="bg-black/75 p-1 rounded backdrop-blur-sm text-primary">
+                {isChecked ? (
+                  <CheckSquare size={16} />
+                ) : (
+                  <Square size={16} className="text-white/70" />
+                )}
+              </div>
             ) : (
-              <Icon
-                className={clsx(viewMode === "list" ? "w-6 h-6" : "w-12 h-12")}
-              />
+              asset.cdn_status === "live" && (
+                <span className="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-black/75 text-emerald-400 border border-emerald-500/30 backdrop-blur-sm flex items-center gap-1.5 shadow-sm">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                  CDN
+                </span>
+              )
             )}
+          </div>
+
+          <div className="absolute top-2.5 right-2.5 z-10 flex items-center gap-1">
             {asset.is_compressed && (
-              <div className="absolute bottom-0 right-0 bg-emerald-600 text-white text-[8px] px-1 font-bold">
+              <span className="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-emerald-600 text-white shadow-sm backdrop-blur-sm">
                 {asset.compression_ratio && asset.compression_ratio < 1
                   ? `-${Math.round((1 - asset.compression_ratio) * 100)}%`
                   : "OPT"}
-              </div>
+              </span>
             )}
           </div>
 
-          <div className="flex-1 min-w-0 w-full">
-            <h3 className="text-sm font-medium truncate text-text-primary">
+          <div className="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-black/90 via-black/50 to-transparent flex items-end justify-between opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+            <span
+              className="text-xs font-medium text-white truncate max-w-[70%]"
+              title={asset.original_filename}
+            >
               {asset.original_filename}
-            </h3>
-            <div
-              className={clsx(
-                "flex mt-1",
-                viewMode === "list"
-                  ? "flex-col gap-1"
-                  : "flex-row justify-center gap-2",
-              )}
-            >
-              <div className="flex items-center gap-2 text-xs text-text-secondary">
-                {viewMode === "list" && (
-                  <>
-                    <span className="capitalize">{asset.file_type}</span>
-                    <span className="w-1 h-1 rounded-full bg-text-muted/50" />
-                  </>
+            </span>
+
+            {!isSelectionMode && (
+              <div className="flex items-center gap-1.5 flex-none">
+                {canCompress && (
+                  <button
+                    onClick={handleCompress}
+                    className="p-1.5 bg-black/70 hover:bg-primary text-white hover:text-background rounded transition-colors cursor-pointer"
+                    title="Optimize"
+                  >
+                    <Zap size={13} />
+                  </button>
                 )}
-                <span className="font-mono">
-                  {formatBytes(asset.file_size_bytes)}
-                </span>
-                <span className="w-1 h-1 rounded-full bg-text-muted/50" />
-                <span className="inline-flex items-center gap-1 text-[10px]">
-                  {asset.cdn_status === "live" ? (
-                    <span className="text-emerald-400 inline-flex items-center gap-0.5">
-                      <Globe size={10} /> CDN
-                    </span>
-                  ) : asset.cdn_status === "failed" ? (
-                    <span className="text-red-400 inline-flex items-center gap-0.5">
-                      <AlertCircle size={10} /> Sync Err
-                    </span>
-                  ) : (
-                    <span className="text-text-muted inline-flex items-center gap-0.5">
-                      <HardDrive size={10} /> Local
-                    </span>
-                  )}
-                </span>
-              </div>
-
-              {asset.tags.length > 0 && (
-                <div
-                  className={clsx(
-                    "flex flex-wrap gap-1",
-                    viewMode === "grid" && "justify-center",
-                  )}
-                >
-                  {asset.tags.slice(0, viewMode === "list" ? 3 : 2).map((t) => (
-                    <span
-                      key={t.id}
-                      className="px-1.5 py-0.5 rounded text-[9px] font-medium border border-transparent"
-                      style={{
-                        backgroundColor: `${t.color}25`,
-                        color: t.color,
-                      }}
-                    >
-                      {t.name}
-                    </span>
-                  ))}
-                  {asset.tags.length > (viewMode === "list" ? 3 : 2) && (
-                    <span className="px-1.5 py-0.5 bg-surface-highlight rounded text-[9px] text-text-muted">
-                      +{asset.tags.length - (viewMode === "list" ? 3 : 2)}
-                    </span>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {!isSelectionMode && (
-            <div
-              className={clsx(
-                "flex items-center opacity-0 group-hover:opacity-100 transition-opacity",
-                viewMode === "grid" &&
-                  "absolute top-2 right-2 bg-surface/80 rounded backdrop-blur-sm p-1 shadow-sm",
-              )}
-            >
-              {canCompress && (
                 <button
-                  onClick={handleCompress}
-                  className="pointer-events-auto p-2 text-text-muted hover:text-primary hover:bg-primary/10 transition-colors cursor-pointer"
-                  title="Compress"
+                  onClick={handleDelete}
+                  className="p-1.5 bg-black/70 hover:bg-red-600 text-white rounded transition-colors cursor-pointer"
+                  title="Delete"
                 >
-                  <Zap size={16} />
+                  <Trash2 size={13} />
                 </button>
-              )}
-              <button
-                onClick={handleDelete}
-                className="pointer-events-auto p-2 text-text-muted hover:text-red-500 hover:bg-red-900/20 transition-colors cursor-pointer"
-                title="Delete"
-              >
-                <Trash2 size={16} />
-              </button>
-            </div>
-          )}
-
-          {viewMode === "list" && (
-            <div className="text-[10px] text-text-muted hidden sm:block self-start mt-1">
-              {formatDate(asset.created_at)}
-            </div>
-          )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     );
   },
 );
-

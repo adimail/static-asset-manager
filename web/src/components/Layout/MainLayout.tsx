@@ -28,7 +28,7 @@ export function MainLayout() {
     if (isResizing && containerRef.current) {
       const containerWidth = containerRef.current.getBoundingClientRect().width;
       const newWidth = (e.clientX / containerWidth) * 100;
-      if (newWidth >= 20 && newWidth <= 60) {
+      if (newWidth >= 30 && newWidth <= 70) {
         setMasterPanelWidth(newWidth);
       }
     }
@@ -107,51 +107,52 @@ export function MainLayout() {
     };
   }, [uploadFile]);
 
-  const showDetail = selectedAssetId !== null || isUploadOpen;
+  const hasSelectionOrUpload = selectedAssetId !== null || isUploadOpen;
 
   return (
     <div ref={containerRef} className="flex-1 flex overflow-hidden relative">
       {isDraggingGlobal && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex flex-col items-center justify-center border-4 border-dashed border-primary animate-fade-in pointer-events-none">
-          <div className="w-24 h-24 bg-primary/20 rounded-full flex items-center justify-center mb-6 text-primary">
-            <UploadCloud size={56} />
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex flex-col items-center justify-center border-4 border-dashed border-primary animate-fade-in pointer-events-none">
+          <div className="w-20 h-20 bg-primary/20 rounded-full flex items-center justify-center mb-4 text-primary">
+            <UploadCloud size={48} />
           </div>
-          <h2 className="text-2xl font-bold text-white mb-2">
-            Drop assets to import
+          <h2 className="text-xl font-bold text-white mb-1">
+            Drop files anywhere to import
           </h2>
-          <p className="text-sm text-text-muted">
-            Instant upload to Orion Asset Manager
+          <p className="text-xs text-text-muted">
+            Instant upload to your library
           </p>
         </div>
       )}
 
       <div
         className={clsx(
-          "flex flex-col bg-bg border-r border-border",
-          "w-full md:w-auto absolute md:relative inset-0 md:inset-auto z-10 md:z-0",
-          showDetail ? "hidden md:flex" : "flex",
+          "flex flex-col bg-bg transition-[width] duration-150 ease-out",
+          hasSelectionOrUpload ? "border-r border-border" : "w-full",
         )}
         style={{
-          width: window.innerWidth >= 768 ? `${masterPanelWidth}%` : "100%",
+          width: hasSelectionOrUpload
+            ? window.innerWidth >= 768
+              ? `${masterPanelWidth}%`
+              : "100%"
+            : "100%",
         }}
       >
         <MasterPanel />
       </div>
 
-      <div
-        className="hidden md:block w-[3px] hover:w-[4px] bg-border hover:bg-primary cursor-col-resize z-20 flex-none"
-        onMouseDown={startResizing}
-      />
+      {hasSelectionOrUpload && (
+        <div
+          className="hidden md:block w-1 hover:w-1.5 bg-border hover:bg-primary cursor-col-resize z-20 flex-none transition-all"
+          onMouseDown={startResizing}
+        />
+      )}
 
-      <div
-        className={clsx(
-          "flex-1 flex flex-col bg-surface",
-          "w-full md:w-auto absolute md:relative inset-0 md:inset-auto z-20 md:z-0",
-          showDetail ? "flex" : "hidden md:flex",
-        )}
-      >
-        <DetailPanel />
-      </div>
+      {hasSelectionOrUpload && (
+        <div className="flex-1 flex flex-col bg-surface overflow-hidden">
+          <DetailPanel />
+        </div>
+      )}
     </div>
   );
 }

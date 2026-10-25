@@ -172,23 +172,23 @@ export function AssetPreview({ asset }: { asset: Asset }) {
     <div className="h-full flex flex-col bg-bg">
       <div className="h-16 flex-none px-6 flex items-center justify-between border-b border-border bg-surface/50 backdrop-blur-sm z-10">
         {showDeleteConfirm ? (
-          <div className="flex items-center justify-between w-full bg-red-950/40 p-2 border border-red-800">
-            <span className="text-red-400 font-medium px-2">
-              Delete this file?
+          <div className="flex items-center justify-between w-full bg-red-950/40 p-2 border border-red-800 rounded-md">
+            <span className="text-red-400 font-medium px-2 text-xs">
+              Delete this file permanently?
             </span>
             <div className="flex gap-2">
               <button
                 autoFocus
                 onClick={() => setShowDeleteConfirm(false)}
-                className="px-3 py-1.5 text-sm font-medium text-text-secondary hover:bg-surface-highlight transition-colors cursor-pointer"
+                className="px-3 py-1 text-xs font-medium text-text-secondary hover:bg-surface-highlight rounded transition-colors cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 onClick={handleDelete}
-                className="px-3 py-1.5 text-sm font-medium text-white bg-red-600 hover:bg-red-700 shadow-sm transition-colors cursor-pointer"
+                className="px-3 py-1 text-xs font-medium text-white bg-red-600 hover:bg-red-700 rounded shadow-sm transition-colors cursor-pointer"
               >
-                Confirm
+                Confirm Delete
               </button>
             </div>
           </div>
@@ -199,7 +199,7 @@ export function AssetPreview({ asset }: { asset: Asset }) {
                 onClick={() => selectAsset(null)}
                 className="md:hidden p-2 -ml-2 text-text-secondary hover:bg-surface-highlight rounded-full transition-colors cursor-pointer"
               >
-                <ArrowLeft size={20} />
+                <ArrowLeft size={18} />
               </button>
               <div className="flex flex-col min-w-0 w-full">
                 {isEditingName ? (
@@ -217,13 +217,13 @@ export function AssetPreview({ asset }: { asset: Asset }) {
                         }
                       }}
                       onBlur={handleRename}
-                      className="w-full bg-surface border border-primary px-2 py-0.5 text-sm font-semibold text-text-primary rounded outline-none"
+                      className="w-full bg-surface border border-primary px-2 py-0.5 text-xs font-semibold text-text-primary rounded outline-none"
                     />
                   </div>
                 ) : (
                   <div className="flex items-center gap-2 group/title">
                     <h2
-                      className="font-semibold text-text-primary truncate max-w-md cursor-pointer hover:text-primary transition-colors"
+                      className="font-semibold text-sm text-text-primary truncate max-w-md cursor-pointer hover:text-primary transition-colors"
                       title={asset.original_filename}
                       onClick={() => setIsEditingName(true)}
                     >
@@ -233,78 +233,80 @@ export function AssetPreview({ asset }: { asset: Asset }) {
                       onClick={() => setIsEditingName(true)}
                       className="opacity-0 group-hover/title:opacity-100 text-text-muted hover:text-primary transition-opacity cursor-pointer"
                     >
-                      <Pencil size={14} />
+                      <Pencil size={13} />
                     </button>
                   </div>
                 )}
-                <span className="text-xs text-text-muted">
+                <span className="text-[11px] text-text-muted">
                   {formatBytes(asset.file_size_bytes)}
                 </span>
               </div>
             </div>
-            <div className="flex items-center gap-2 flex-none">
+            <div className="flex items-center gap-1.5 flex-none">
               <button
                 onClick={() => setTagModalOpen(true)}
-                className="p-2 text-text-secondary hover:text-primary hover:bg-primary/10 transition-colors cursor-pointer"
+                className="p-2 text-text-secondary hover:text-primary hover:bg-primary/10 rounded transition-colors cursor-pointer"
                 title="Add Tags"
               >
-                <TagIcon size={18} />
+                <TagIcon size={16} />
               </button>
               {canCompress && (
                 <button
                   onClick={handleCompress}
-                  className="p-2 text-text-secondary hover:text-primary hover:bg-primary/10 transition-colors cursor-pointer"
-                  title="Compress"
+                  className="p-2 text-text-secondary hover:text-primary hover:bg-primary/10 rounded transition-colors cursor-pointer"
+                  title="Optimize"
                 >
-                  <Zap size={18} />
+                  <Zap size={16} />
                 </button>
               )}
               <a
                 href={`/api/v1/assets/${asset.id}/download`}
                 download
-                className="p-2 text-text-secondary hover:text-primary hover:bg-primary/10 transition-colors cursor-pointer"
+                className="p-2 text-text-secondary hover:text-primary hover:bg-primary/10 rounded transition-colors cursor-pointer"
                 title="Download"
               >
-                <Download size={18} />
+                <Download size={16} />
               </a>
               <button
                 onClick={() => setShowDeleteConfirm(true)}
-                className="p-2 text-text-secondary hover:text-red-500 hover:bg-red-900/20 transition-colors cursor-pointer"
+                className="p-2 text-text-secondary hover:text-red-400 hover:bg-red-900/20 rounded transition-colors cursor-pointer"
                 title="Delete"
               >
-                <Trash2 size={18} />
+                <Trash2 size={16} />
               </button>
               <button
                 onClick={() => selectAsset(null)}
-                className="hidden md:block p-2 text-text-secondary hover:bg-surface-highlight transition-colors cursor-pointer"
-                title="Close"
+                className="p-2 text-text-secondary hover:bg-surface-highlight rounded transition-colors cursor-pointer"
+                title="Close Inspector"
               >
-                <X size={18} />
+                <X size={16} />
               </button>
             </div>
           </>
         )}
       </div>
 
-      <div className="flex-1 overflow-auto p-4 md:p-8 flex items-center justify-center bg-surface-highlight/30">
-        <div className="relative w-full h-full max-w-4xl flex items-center justify-center overflow-hidden">
+      <div className="flex-1 overflow-auto p-4 md:p-8 flex items-center justify-center bg-surface-highlight/20">
+        <div className="relative w-full h-full max-w-3xl flex items-center justify-center overflow-hidden">
           {asset.file_type === "image" ? (
             <img
               src={`/api/v1/assets/${asset.id}/download`}
               alt={asset.original_filename}
-              className="max-w-full max-h-full object-contain shadow-xl"
+              className="max-w-full max-h-full object-contain rounded-lg shadow-xl"
             />
           ) : asset.file_type === "video" ? (
             <video
               ref={videoRef}
               src={`/api/v1/assets/${asset.id}/download`}
               controls
-              className="max-w-full max-h-full bg-black w-full h-full"
+              playsInline
+              preload="metadata"
+              className="max-w-full max-h-full bg-black rounded-lg shadow-xl"
             />
           ) : asset.file_type === "audio" ? (
-            <div className="w-full max-w-xl p-8 bg-surface border border-border shadow-xl flex flex-col items-center">
-              <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center mb-6">
-                <Music size={40} className="text-primary" />
+            <div className="w-full max-w-md p-6 bg-surface border border-border rounded-xl shadow-xl flex flex-col items-center">
+              <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mb-5 text-primary">
+                <Music size={36} />
               </div>
               <audio
                 ref={audioRef}
@@ -314,43 +316,45 @@ export function AssetPreview({ asset }: { asset: Asset }) {
               />
             </div>
           ) : isPreviewableText ? (
-            <div className="w-full h-full bg-surface border border-border p-6 overflow-auto font-mono text-sm text-text-primary shadow-inner">
+            <div className="w-full h-full bg-surface border border-border rounded-lg p-5 overflow-auto font-mono text-xs text-text-primary shadow-inner">
               {isLoadingText ? (
                 <div className="flex items-center gap-2 text-text-muted">
-                  <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                  Loading content...
+                  <div className="w-3.5 h-3.5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                  Loading contents...
                 </div>
               ) : (
-                <pre className="whitespace-pre-wrap break-all">
+                <pre className="whitespace-pre-wrap break-all leading-relaxed">
                   {textContent}
                 </pre>
               )}
             </div>
           ) : (
-            <div className="text-center p-8">
-              <div className="w-24 h-24 bg-surface-highlight mx-auto mb-6 flex items-center justify-center">
-                <FileText size={48} className="text-text-muted" />
+            <div className="text-center p-6">
+              <div className="w-20 h-20 bg-surface-highlight rounded-xl mx-auto mb-4 flex items-center justify-center">
+                <FileText size={40} className="text-text-muted" />
               </div>
-              <p className="text-text-secondary mb-4">No preview available</p>
+              <p className="text-xs text-text-secondary mb-3">
+                No preview available
+              </p>
               <a
                 href={`/api/v1/assets/${asset.id}/download`}
                 download
-                className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-background hover:bg-primary-hover transition-colors shadow-lg cursor-pointer"
+                className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-primary text-background font-semibold text-xs rounded hover:bg-primary-hover transition-colors shadow"
               >
-                <Download size={16} /> Download File
+                <Download size={14} /> Download File
               </a>
             </div>
           )}
         </div>
       </div>
 
-      <div className="flex-none bg-surface border-t border-border p-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="flex-none bg-surface border-t border-border p-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div
             onClick={() => copyToClipboard(asset.id, "Asset ID")}
-            className="group cursor-pointer p-4 bg-surface-highlight/20 border border-dashed border-border hover:border-primary hover:bg-primary/5 transition-all"
+            className="group cursor-pointer p-3 bg-surface-highlight/30 border border-border hover:border-primary/50 rounded-lg transition-all"
           >
-            <label className="text-[10px] font-bold text-text-muted uppercase tracking-widest mb-1 block">
+            <label className="text-[10px] font-bold text-text-muted uppercase tracking-wider mb-1 block">
               Asset ID (Click to copy)
             </label>
             <div className="flex items-center justify-between gap-2">
@@ -358,7 +362,7 @@ export function AssetPreview({ asset }: { asset: Asset }) {
                 {asset.id}
               </code>
               {copiedField === "Asset ID" ? (
-                <Check size={14} className="text-green-500" />
+                <Check size={14} className="text-emerald-400" />
               ) : (
                 <Copy
                   size={14}
@@ -373,13 +377,13 @@ export function AssetPreview({ asset }: { asset: Asset }) {
                 isLiveOnCdn && baseUrl
                   ? publicUrl
                   : window.location.origin + publicUrl,
-                isLiveOnCdn ? "Public CDN URL" : "Local Download URL",
+                isLiveOnCdn ? "Public CDN URL" : "Local URL",
               )
             }
-            className="group cursor-pointer p-4 bg-surface-highlight/20 border border-dashed border-border hover:border-primary hover:bg-primary/5 transition-all"
+            className="group cursor-pointer p-3 bg-surface-highlight/30 border border-border hover:border-primary/50 rounded-lg transition-all"
           >
             <div className="flex items-center justify-between mb-1">
-              <label className="text-[10px] font-bold text-text-muted uppercase tracking-widest block">
+              <label className="text-[10px] font-bold text-text-muted uppercase tracking-wider block">
                 {isLiveOnCdn ? "Public CDN URL" : "Local URL (Pending Sync)"}
               </label>
               {isLiveOnCdn ? (
@@ -388,11 +392,11 @@ export function AssetPreview({ asset }: { asset: Asset }) {
                 </span>
               ) : asset.cdn_status === "failed" ? (
                 <span className="text-[10px] text-red-400 font-bold flex items-center gap-1">
-                  <AlertCircle size={10} /> Sync Failed
+                  <AlertCircle size={10} /> Error
                 </span>
               ) : (
                 <span className="text-[10px] text-amber-400 font-bold flex items-center gap-1">
-                  <HardDrive size={10} /> Local Only
+                  <HardDrive size={10} /> Local
                 </span>
               )}
             </div>
@@ -403,7 +407,7 @@ export function AssetPreview({ asset }: { asset: Asset }) {
                   : window.location.origin + publicUrl}
               </code>
               {copiedField?.includes("URL") ? (
-                <Check size={14} className="text-green-500" />
+                <Check size={14} className="text-emerald-400" />
               ) : (
                 <Copy
                   size={14}
@@ -413,49 +417,51 @@ export function AssetPreview({ asset }: { asset: Asset }) {
             </div>
           </div>
         </div>
-        <div className="mt-4 flex flex-wrap gap-6 text-xs text-text-muted border-t border-border/50 pt-4">
+        <div className="mt-3.5 flex flex-wrap gap-5 text-xs text-text-muted border-t border-border/50 pt-3">
           <div>
-            <span className="font-bold uppercase mr-2">Type:</span>{" "}
+            <span className="font-bold uppercase text-[10px] mr-1.5">
+              Type:
+            </span>{" "}
             {asset.file_type} ({asset.extension})
           </div>
           <div>
-            <span className="font-bold uppercase mr-2">Size:</span>{" "}
+            <span className="font-bold uppercase text-[10px] mr-1.5">
+              Size:
+            </span>{" "}
             {formatBytes(asset.file_size_bytes)}
           </div>
           <div>
-            <span className="font-bold uppercase mr-2">MIME:</span>{" "}
-            {asset.mime_type}
-          </div>
-          <div>
-            <span className="font-bold uppercase mr-2">Date:</span>{" "}
+            <span className="font-bold uppercase text-[10px] mr-1.5">
+              Date:
+            </span>{" "}
             {formatDate(asset.created_at)}
           </div>
           {asset.is_compressed && (
             <div>
-              <span className="font-bold uppercase mr-2 text-emerald-400">
-                Optimized
+              <span className="font-bold uppercase text-[10px] mr-1.5 text-emerald-400">
+                Optimized:
               </span>
               {asset.compression_ratio && (
                 <span>
-                  ({(asset.compression_ratio * 100).toFixed(0)}% of original)
+                  {(asset.compression_ratio * 100).toFixed(0)}% of original
                 </span>
               )}
             </div>
           )}
         </div>
         {asset.tags.length > 0 && (
-          <div className="mt-4 flex flex-wrap gap-2">
+          <div className="mt-3 flex flex-wrap gap-1.5">
             {asset.tags.map((tag) => (
               <span
                 key={tag.id}
-                className="px-2 py-1 rounded-full text-xs font-medium border border-border"
+                className="px-2 py-0.5 rounded text-[11px] font-medium border"
                 style={{
-                  backgroundColor: `${tag.color}20`,
+                  backgroundColor: `${tag.color}15`,
                   color: tag.color,
-                  borderColor: `${tag.color}40`,
+                  borderColor: `${tag.color}35`,
                 }}
               >
-                {tag.name}
+                #{tag.name}
               </span>
             ))}
           </div>

@@ -20,17 +20,16 @@ import { useAssets } from "../../hooks/useAssets";
 import clsx from "clsx";
 
 const COLORS = [
-  "#ef4444",
+  "#38bdf8",
+  "#818cf8",
+  "#c084fc",
+  "#f472b6",
+  "#fb7185",
   "#f97316",
-  "#f59e0b",
-  "#84cc16",
-  "#22c55e",
-  "#06b6d4",
-  "#3b82f6",
-  "#6366f1",
-  "#a855f7",
-  "#ec4899",
-  "#64748b",
+  "#facc15",
+  "#4ade80",
+  "#2dd4bf",
+  "#94a3b8",
 ];
 
 export function TagManagerModal() {
@@ -52,7 +51,7 @@ export function TagManagerModal() {
   const { mutate: updateTag } = useUpdateTag();
 
   const [newTagName, setNewTagName] = useState("");
-  const [selectedColor, setSelectedColor] = useState(COLORS[6]);
+  const [selectedColor, setSelectedColor] = useState(COLORS[0]);
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
 
   const [editingTagId, setEditingTagId] = useState<string | null>(null);
@@ -99,7 +98,7 @@ export function TagManagerModal() {
     e.preventDefault();
     if (!newTagName.trim()) return;
     createTag(
-      { name: newTagName, color: selectedColor },
+      { name: newTagName.trim(), color: selectedColor },
       {
         onSuccess: () => setNewTagName(""),
       },
@@ -139,7 +138,7 @@ export function TagManagerModal() {
   const saveEdit = () => {
     if (!editingTagId || !editName.trim()) return;
     updateTag(
-      { id: editingTagId, name: editName, color: editColor },
+      { id: editingTagId, name: editName.trim(), color: editColor },
       {
         onSuccess: () => setEditingTagId(null),
       },
@@ -153,67 +152,56 @@ export function TagManagerModal() {
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-      <div className="bg-surface border border-border w-full max-w-lg shadow-2xl animate-scale-in flex flex-col max-h-[80vh]">
-        <div className="flex items-center justify-between p-6 border-b border-border">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-primary/10 rounded-full">
-              <TagIcon size={20} className="text-primary" />
-            </div>
-            <div>
-              <h2 className="text-xl font-bold text-text-primary">
-                Manage Tags
-              </h2>
-              <p className="text-xs text-text-muted">
-                {targetAssetIds.length > 0
-                  ? `Applying to ${targetAssetIds.length} asset${targetAssetIds.length > 1 ? "s" : ""}`
-                  : "Create and manage tags"}
-              </p>
-            </div>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-fade-in">
+      <div className="bg-surface border border-border w-full max-w-md shadow-2xl rounded-xl flex flex-col max-h-[85vh] overflow-hidden">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border">
+          <div className="flex items-center gap-2.5">
+            <TagIcon size={18} className="text-primary" />
+            <h3 className="text-sm font-semibold text-text-primary">
+              {targetAssetIds.length > 0
+                ? "Tag Selected Assets"
+                : "Manage Tags"}
+            </h3>
           </div>
           <button
             onClick={() => setTagModalOpen(false)}
-            className="text-text-muted hover:text-text-primary transition-colors cursor-pointer"
+            className="text-text-muted hover:text-text-primary p-1 cursor-pointer"
           >
-            <X size={20} />
+            <X size={18} />
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+        <div className="flex-1 overflow-y-auto p-6 space-y-5">
           <form
             onSubmit={handleCreate}
-            className="space-y-3 bg-surface-highlight/20 p-4 rounded-lg border border-border/50"
+            className="space-y-3 bg-surface-highlight/30 p-3.5 rounded-lg border border-border"
           >
-            <label className="text-xs font-bold uppercase tracking-widest text-text-muted">
-              Create New Tag
-            </label>
             <div className="flex gap-2">
               <input
                 type="text"
                 value={newTagName}
                 onChange={(e) => setNewTagName(e.target.value)}
-                placeholder="Tag name..."
-                className="flex-1 h-10 px-3 bg-surface border border-border rounded text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
+                placeholder="Create new tag..."
+                className="flex-1 h-8 px-2.5 bg-surface border border-border rounded text-xs text-text-primary placeholder:text-text-muted focus:ring-1 focus:ring-primary focus:border-primary outline-none"
               />
               <button
                 type="submit"
                 disabled={isCreating || !newTagName.trim()}
-                className="px-4 bg-primary text-background font-medium rounded hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="px-3 bg-primary text-background font-semibold text-xs rounded hover:bg-primary-hover disabled:opacity-40 cursor-pointer transition-colors"
               >
-                <Plus size={20} />
+                <Plus size={16} />
               </button>
             </div>
-            <div className="flex gap-2 flex-wrap">
+            <div className="flex gap-1.5 flex-wrap">
               {COLORS.map((color) => (
                 <button
                   key={color}
                   type="button"
                   onClick={() => setSelectedColor(color)}
                   className={clsx(
-                    "w-6 h-6 rounded-full transition-transform hover:scale-110 focus:outline-none ring-2 ring-offset-2 ring-offset-surface cursor-pointer",
-                    selectedColor === color
-                      ? "ring-primary scale-110"
-                      : "ring-transparent",
+                    "w-5 h-5 rounded-full transition-transform hover:scale-110 cursor-pointer",
+                    selectedColor === color &&
+                      "ring-2 ring-primary ring-offset-2 ring-offset-surface",
                   )}
                   style={{ backgroundColor: color }}
                 />
@@ -221,20 +209,23 @@ export function TagManagerModal() {
             </div>
           </form>
 
-          <div className="space-y-3">
-            <label className="text-xs font-bold uppercase tracking-widest text-text-muted">
-              Available Tags
+          <div className="space-y-2">
+            <label className="text-[11px] font-bold uppercase tracking-wider text-text-muted">
+              {targetAssetIds.length > 0
+                ? "Select Tags to Apply"
+                : "Existing Tags"}
             </label>
+
             {isLoading ? (
-              <div className="text-center py-4 text-text-muted">
+              <div className="py-6 text-center text-xs text-text-muted">
                 Loading tags...
               </div>
             ) : tags?.length === 0 ? (
-              <div className="text-center py-4 text-text-muted italic">
-                No tags created yet.
+              <div className="py-6 text-center text-xs text-text-muted">
+                No tags created yet
               </div>
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 {tags?.map((tag) => {
                   const isSelected = selectedTagIds.includes(tag.id);
                   const isEditing = editingTagId === tag.id;
@@ -244,46 +235,27 @@ export function TagManagerModal() {
                     return (
                       <div
                         key={tag.id}
-                        className="flex items-center gap-2 p-2 bg-surface-highlight/30 rounded border border-primary/50"
+                        className="flex items-center gap-2 p-2 bg-surface-highlight/40 rounded border border-primary/50"
                       >
-                        <div className="flex-1 flex flex-col gap-2">
-                          <input
-                            type="text"
-                            value={editName}
-                            onChange={(e) => setEditName(e.target.value)}
-                            className="h-8 px-2 bg-surface border border-border rounded text-sm w-full"
-                            autoFocus
-                          />
-                          <div className="flex gap-1.5 flex-wrap">
-                            {COLORS.map((color) => (
-                              <button
-                                key={color}
-                                onClick={() => setEditColor(color)}
-                                className={clsx(
-                                  "w-4 h-4 rounded-full cursor-pointer",
-                                  editColor === color
-                                    ? "ring-2 ring-primary ring-offset-1"
-                                    : "",
-                                )}
-                                style={{ backgroundColor: color }}
-                              />
-                            ))}
-                          </div>
-                        </div>
-                        <div className="flex flex-col gap-1">
-                          <button
-                            onClick={saveEdit}
-                            className="p-1.5 bg-green-500 text-white rounded hover:bg-green-600"
-                          >
-                            <Check size={14} />
-                          </button>
-                          <button
-                            onClick={() => setEditingTagId(null)}
-                            className="p-1.5 bg-surface border border-border text-text-secondary rounded hover:bg-surface-highlight"
-                          >
-                            <X size={14} />
-                          </button>
-                        </div>
+                        <input
+                          type="text"
+                          value={editName}
+                          onChange={(e) => setEditName(e.target.value)}
+                          className="flex-1 h-7 px-2 bg-surface border border-border rounded text-xs"
+                          autoFocus
+                        />
+                        <button
+                          onClick={saveEdit}
+                          className="p-1 bg-emerald-500 text-white rounded cursor-pointer"
+                        >
+                          <Check size={14} />
+                        </button>
+                        <button
+                          onClick={() => setEditingTagId(null)}
+                          className="p-1 text-text-muted rounded cursor-pointer"
+                        >
+                          <X size={14} />
+                        </button>
                       </div>
                     );
                   }
@@ -292,30 +264,24 @@ export function TagManagerModal() {
                     return (
                       <div
                         key={tag.id}
-                        className="flex flex-col gap-2 p-3 bg-red-950/40 border border-red-800 rounded"
+                        className="p-2.5 bg-red-950/30 border border-red-800/60 rounded flex items-center justify-between"
                       >
-                        <div className="flex items-start gap-2 text-red-400">
-                          <AlertTriangle size={16} className="mt-0.5" />
-                          <div className="text-xs">
-                            <p className="font-bold">Delete "{tag.name}"?</p>
-                            <p>
-                              This will remove the tag from all associated
-                              assets.
-                            </p>
-                          </div>
+                        <div className="flex items-center gap-2 text-xs text-red-400">
+                          <AlertTriangle size={14} />
+                          <span>Delete #{tag.name}? (Files remain safe)</span>
                         </div>
-                        <div className="flex justify-end gap-2 mt-1">
+                        <div className="flex items-center gap-1.5">
                           <button
                             onClick={() => setDeleteConfirmId(null)}
-                            className="px-2 py-1 text-xs font-medium bg-surface border border-border rounded hover:bg-surface-highlight text-text-secondary"
+                            className="px-2 py-0.5 text-[11px] text-text-secondary hover:text-white cursor-pointer"
                           >
                             Cancel
                           </button>
                           <button
                             onClick={() => handleDelete(tag.id)}
-                            className="px-2 py-1 text-xs font-medium bg-red-500 text-white rounded hover:bg-red-600"
+                            className="px-2 py-0.5 text-[11px] bg-red-600 text-white rounded font-medium cursor-pointer"
                           >
-                            Confirm Delete
+                            Confirm
                           </button>
                         </div>
                       </div>
@@ -326,56 +292,46 @@ export function TagManagerModal() {
                     <div
                       key={tag.id}
                       className={clsx(
-                        "group flex items-center justify-between p-2 rounded border transition-all",
+                        "group flex items-center justify-between p-2 rounded-md border transition-all cursor-pointer",
                         isSelected
                           ? "bg-primary/10 border-primary"
-                          : "bg-surface border-border hover:border-primary/30",
+                          : "bg-surface border-border hover:border-border-focused",
                       )}
+                      onClick={() => toggleTagSelection(tag.id)}
                     >
-                      <div
-                        className="flex items-center gap-3 flex-1 cursor-pointer"
-                        onClick={() => toggleTagSelection(tag.id)}
-                      >
-                        <div className="relative">
-                          <div
-                            className="w-3 h-3 rounded-full"
-                            style={{ backgroundColor: tag.color }}
-                          />
-                          {isSelected && (
-                            <div className="absolute -top-1 -right-1 bg-primary text-background rounded-full p-0.5">
-                              <Check size={8} />
-                            </div>
-                          )}
-                        </div>
+                      <div className="flex items-center gap-2.5 flex-1 min-w-0">
                         <span
-                          className={clsx(
-                            "text-sm font-medium",
-                            isSelected ? "text-primary" : "text-text-secondary",
-                          )}
-                        >
+                          className="w-2.5 h-2.5 rounded-full flex-none"
+                          style={{ backgroundColor: tag.color }}
+                        />
+                        <span className="text-xs font-medium text-text-primary truncate">
                           {tag.name}
                         </span>
                       </div>
-                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+
+                      <div className="flex items-center gap-1">
+                        {isSelected && (
+                          <Check size={14} className="text-primary mr-1" />
+                        )}
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
                             startEditing(tag);
                           }}
-                          className="p-1.5 text-text-muted hover:text-primary hover:bg-primary/10 rounded cursor-pointer"
-                          title="Edit Tag"
+                          className="opacity-0 group-hover:opacity-100 p-1 text-text-muted hover:text-text-primary rounded cursor-pointer"
+                          title="Edit"
                         >
-                          <Pencil size={14} />
+                          <Pencil size={12} />
                         </button>
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
                             setDeleteConfirmId(tag.id);
                           }}
-                          className="p-1.5 text-text-muted hover:text-red-500 hover:bg-red-900/20 rounded cursor-pointer"
-                          title="Delete Tag"
+                          className="opacity-0 group-hover:opacity-100 p-1 text-text-muted hover:text-red-400 rounded cursor-pointer"
+                          title="Delete"
                         >
-                          <Trash2 size={14} />
+                          <Trash2 size={12} />
                         </button>
                       </div>
                     </div>
@@ -386,20 +342,22 @@ export function TagManagerModal() {
           </div>
         </div>
 
-        <div className="p-6 border-t border-border bg-surface-highlight/10 flex justify-end gap-3">
+        <div className="px-6 py-3.5 border-t border-border bg-surface/50 flex justify-end gap-2">
           <button
             onClick={() => setTagModalOpen(false)}
-            className="px-4 py-2 text-sm font-medium text-text-secondary hover:bg-surface-highlight/50 rounded transition-colors"
+            className="px-3 py-1.5 text-xs text-text-secondary hover:text-text-primary rounded cursor-pointer"
           >
             Cancel
           </button>
-          <button
-            onClick={handleApply}
-            disabled={targetAssetIds.length === 0 || isTagging}
-            className="px-6 py-2 bg-primary text-background font-medium rounded hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-lg"
-          >
-            {isTagging ? "Applying..." : "Apply Tags"}
-          </button>
+          {targetAssetIds.length > 0 && (
+            <button
+              onClick={handleApply}
+              disabled={isTagging}
+              className="px-4 py-1.5 bg-primary text-background font-semibold text-xs rounded hover:bg-primary-hover disabled:opacity-50 cursor-pointer shadow-sm transition-colors"
+            >
+              {isTagging ? "Applying..." : "Save Tags"}
+            </button>
+          )}
         </div>
       </div>
     </div>

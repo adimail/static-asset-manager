@@ -288,11 +288,21 @@ func (s *Service) GetThumbnailPath(ctx context.Context, id string) (string, stri
 	if err != nil {
 		return "", "", err
 	}
-	if a.ThumbnailPath != "" {
-		if _, err := os.Stat(a.ThumbnailPath); err == nil {
-			return a.ThumbnailPath, "image/webp", nil
+
+	thumbPath := filepath.Join(s.thumbnailsDir, id+".webp")
+	if _, err := os.Stat(thumbPath); err == nil {
+		return thumbPath, "image/webp", nil
+	}
+
+	if a.FileType == "image" || a.FileType == "video" {
+		if err := s.preprocessor.GenerateThumbnail(a.StoragePath, thumbPath, a.FileType); err == nil {
+			if _, err := os.Stat(thumbPath); err == nil {
+				s.client.Asset.UpdateOneID(id).SetThumbnailPath(thumbPath).Save(ctx)
+				return thumbPath, "image/webp", nil
+			}
 		}
 	}
+
 	return a.StoragePath, a.MimeType, nil
 }
 
