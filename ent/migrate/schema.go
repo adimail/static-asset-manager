@@ -20,12 +20,29 @@ var (
 		{Name: "is_compressed", Type: field.TypeBool, Default: false},
 		{Name: "original_path", Type: field.TypeString, Nullable: true},
 		{Name: "compression_ratio", Type: field.TypeFloat64, Nullable: true},
+		{Name: "content_hash", Type: field.TypeString, Nullable: true},
+		{Name: "mime_type", Type: field.TypeString, Default: "application/octet-stream"},
+		{Name: "thumbnail_path", Type: field.TypeString, Nullable: true},
+		{Name: "cdn_status", Type: field.TypeString, Default: "local_only"},
+		{Name: "last_synced_at", Type: field.TypeTime, Nullable: true},
 	}
 	// AssetsTable holds the schema information for the "assets" table.
 	AssetsTable = &schema.Table{
 		Name:       "assets",
 		Columns:    AssetsColumns,
 		PrimaryKey: []*schema.Column{AssetsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "asset_content_hash",
+				Unique:  false,
+				Columns: []*schema.Column{AssetsColumns[10]},
+			},
+			{
+				Name:    "asset_cdn_status",
+				Unique:  false,
+				Columns: []*schema.Column{AssetsColumns[13]},
+			},
+		},
 	}
 	// CompressionJobsColumns holds the columns for the "compression_jobs" table.
 	CompressionJobsColumns = []*schema.Column{

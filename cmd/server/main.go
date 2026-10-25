@@ -27,6 +27,15 @@ func main() {
 	if err := os.MkdirAll(filepath.Dir(cfg.Database.Path), 0o755); err != nil {
 		log.Fatal(err)
 	}
+	if err := os.MkdirAll(cfg.Storage.AssetsDir, 0o755); err != nil {
+		log.Fatal(err)
+	}
+	if err := os.MkdirAll(cfg.Storage.OriginalsDir, 0o755); err != nil {
+		log.Fatal(err)
+	}
+	if err := os.MkdirAll(cfg.Storage.ThumbnailsDir, 0o755); err != nil {
+		log.Fatal(err)
+	}
 
 	client, err := ent.Open("sqlite3", "file:"+cfg.Database.Path+"?_journal_mode=WAL&_busy_timeout=5000&_fk=1")
 	if err != nil {
@@ -40,10 +49,19 @@ func main() {
 
 	fs := filesystem.New()
 	validator := assets.NewValidator(cfg.Server.MaxUploadSize)
-
 	preprocessor := preprocessing.NewService(client, cfg.Compression)
 
-	assetService := assets.NewService(client, fs, validator, cfg.Storage.AssetsDir, preprocessor)
+	assetService := assets.NewService(
+		client,
+		fs,
+		validator,
+		cfg.Storage.AssetsDir,
+		cfg.Storage.OriginalsDir,
+		cfg.Storage.ThumbnailsDir,
+		cfg.Storage.WranglerPath,
+		cfg.Storage.CloudflareProject,
+		preprocessor,
+	)
 	tagService := tags.NewService(client, assetService)
 
 	handler := api.NewServer(assetService, tagService)

@@ -48,6 +48,11 @@ type AssetMutation struct {
 	original_path           *string
 	compression_ratio       *float64
 	addcompression_ratio    *float64
+	content_hash            *string
+	mime_type               *string
+	thumbnail_path          *string
+	cdn_status              *string
+	last_synced_at          *time.Time
 	clearedFields           map[string]struct{}
 	tags                    map[string]struct{}
 	removedtags             map[string]struct{}
@@ -555,6 +560,225 @@ func (m *AssetMutation) ResetCompressionRatio() {
 	delete(m.clearedFields, asset.FieldCompressionRatio)
 }
 
+// SetContentHash sets the "content_hash" field.
+func (m *AssetMutation) SetContentHash(s string) {
+	m.content_hash = &s
+}
+
+// ContentHash returns the value of the "content_hash" field in the mutation.
+func (m *AssetMutation) ContentHash() (r string, exists bool) {
+	v := m.content_hash
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldContentHash returns the old "content_hash" field's value of the Asset entity.
+// If the Asset object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AssetMutation) OldContentHash(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldContentHash is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldContentHash requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldContentHash: %w", err)
+	}
+	return oldValue.ContentHash, nil
+}
+
+// ClearContentHash clears the value of the "content_hash" field.
+func (m *AssetMutation) ClearContentHash() {
+	m.content_hash = nil
+	m.clearedFields[asset.FieldContentHash] = struct{}{}
+}
+
+// ContentHashCleared returns if the "content_hash" field was cleared in this mutation.
+func (m *AssetMutation) ContentHashCleared() bool {
+	_, ok := m.clearedFields[asset.FieldContentHash]
+	return ok
+}
+
+// ResetContentHash resets all changes to the "content_hash" field.
+func (m *AssetMutation) ResetContentHash() {
+	m.content_hash = nil
+	delete(m.clearedFields, asset.FieldContentHash)
+}
+
+// SetMimeType sets the "mime_type" field.
+func (m *AssetMutation) SetMimeType(s string) {
+	m.mime_type = &s
+}
+
+// MimeType returns the value of the "mime_type" field in the mutation.
+func (m *AssetMutation) MimeType() (r string, exists bool) {
+	v := m.mime_type
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldMimeType returns the old "mime_type" field's value of the Asset entity.
+// If the Asset object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AssetMutation) OldMimeType(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldMimeType is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldMimeType requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldMimeType: %w", err)
+	}
+	return oldValue.MimeType, nil
+}
+
+// ResetMimeType resets all changes to the "mime_type" field.
+func (m *AssetMutation) ResetMimeType() {
+	m.mime_type = nil
+}
+
+// SetThumbnailPath sets the "thumbnail_path" field.
+func (m *AssetMutation) SetThumbnailPath(s string) {
+	m.thumbnail_path = &s
+}
+
+// ThumbnailPath returns the value of the "thumbnail_path" field in the mutation.
+func (m *AssetMutation) ThumbnailPath() (r string, exists bool) {
+	v := m.thumbnail_path
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldThumbnailPath returns the old "thumbnail_path" field's value of the Asset entity.
+// If the Asset object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AssetMutation) OldThumbnailPath(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldThumbnailPath is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldThumbnailPath requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldThumbnailPath: %w", err)
+	}
+	return oldValue.ThumbnailPath, nil
+}
+
+// ClearThumbnailPath clears the value of the "thumbnail_path" field.
+func (m *AssetMutation) ClearThumbnailPath() {
+	m.thumbnail_path = nil
+	m.clearedFields[asset.FieldThumbnailPath] = struct{}{}
+}
+
+// ThumbnailPathCleared returns if the "thumbnail_path" field was cleared in this mutation.
+func (m *AssetMutation) ThumbnailPathCleared() bool {
+	_, ok := m.clearedFields[asset.FieldThumbnailPath]
+	return ok
+}
+
+// ResetThumbnailPath resets all changes to the "thumbnail_path" field.
+func (m *AssetMutation) ResetThumbnailPath() {
+	m.thumbnail_path = nil
+	delete(m.clearedFields, asset.FieldThumbnailPath)
+}
+
+// SetCdnStatus sets the "cdn_status" field.
+func (m *AssetMutation) SetCdnStatus(s string) {
+	m.cdn_status = &s
+}
+
+// CdnStatus returns the value of the "cdn_status" field in the mutation.
+func (m *AssetMutation) CdnStatus() (r string, exists bool) {
+	v := m.cdn_status
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCdnStatus returns the old "cdn_status" field's value of the Asset entity.
+// If the Asset object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AssetMutation) OldCdnStatus(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCdnStatus is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCdnStatus requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCdnStatus: %w", err)
+	}
+	return oldValue.CdnStatus, nil
+}
+
+// ResetCdnStatus resets all changes to the "cdn_status" field.
+func (m *AssetMutation) ResetCdnStatus() {
+	m.cdn_status = nil
+}
+
+// SetLastSyncedAt sets the "last_synced_at" field.
+func (m *AssetMutation) SetLastSyncedAt(t time.Time) {
+	m.last_synced_at = &t
+}
+
+// LastSyncedAt returns the value of the "last_synced_at" field in the mutation.
+func (m *AssetMutation) LastSyncedAt() (r time.Time, exists bool) {
+	v := m.last_synced_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLastSyncedAt returns the old "last_synced_at" field's value of the Asset entity.
+// If the Asset object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AssetMutation) OldLastSyncedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLastSyncedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLastSyncedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLastSyncedAt: %w", err)
+	}
+	return oldValue.LastSyncedAt, nil
+}
+
+// ClearLastSyncedAt clears the value of the "last_synced_at" field.
+func (m *AssetMutation) ClearLastSyncedAt() {
+	m.last_synced_at = nil
+	m.clearedFields[asset.FieldLastSyncedAt] = struct{}{}
+}
+
+// LastSyncedAtCleared returns if the "last_synced_at" field was cleared in this mutation.
+func (m *AssetMutation) LastSyncedAtCleared() bool {
+	_, ok := m.clearedFields[asset.FieldLastSyncedAt]
+	return ok
+}
+
+// ResetLastSyncedAt resets all changes to the "last_synced_at" field.
+func (m *AssetMutation) ResetLastSyncedAt() {
+	m.last_synced_at = nil
+	delete(m.clearedFields, asset.FieldLastSyncedAt)
+}
+
 // AddTagIDs adds the "tags" edge to the Tag entity by ids.
 func (m *AssetMutation) AddTagIDs(ids ...string) {
 	if m.tags == nil {
@@ -697,7 +921,7 @@ func (m *AssetMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *AssetMutation) Fields() []string {
-	fields := make([]string, 0, 9)
+	fields := make([]string, 0, 14)
 	if m.original_filename != nil {
 		fields = append(fields, asset.FieldOriginalFilename)
 	}
@@ -725,6 +949,21 @@ func (m *AssetMutation) Fields() []string {
 	if m.compression_ratio != nil {
 		fields = append(fields, asset.FieldCompressionRatio)
 	}
+	if m.content_hash != nil {
+		fields = append(fields, asset.FieldContentHash)
+	}
+	if m.mime_type != nil {
+		fields = append(fields, asset.FieldMimeType)
+	}
+	if m.thumbnail_path != nil {
+		fields = append(fields, asset.FieldThumbnailPath)
+	}
+	if m.cdn_status != nil {
+		fields = append(fields, asset.FieldCdnStatus)
+	}
+	if m.last_synced_at != nil {
+		fields = append(fields, asset.FieldLastSyncedAt)
+	}
 	return fields
 }
 
@@ -751,6 +990,16 @@ func (m *AssetMutation) Field(name string) (ent.Value, bool) {
 		return m.OriginalPath()
 	case asset.FieldCompressionRatio:
 		return m.CompressionRatio()
+	case asset.FieldContentHash:
+		return m.ContentHash()
+	case asset.FieldMimeType:
+		return m.MimeType()
+	case asset.FieldThumbnailPath:
+		return m.ThumbnailPath()
+	case asset.FieldCdnStatus:
+		return m.CdnStatus()
+	case asset.FieldLastSyncedAt:
+		return m.LastSyncedAt()
 	}
 	return nil, false
 }
@@ -778,6 +1027,16 @@ func (m *AssetMutation) OldField(ctx context.Context, name string) (ent.Value, e
 		return m.OldOriginalPath(ctx)
 	case asset.FieldCompressionRatio:
 		return m.OldCompressionRatio(ctx)
+	case asset.FieldContentHash:
+		return m.OldContentHash(ctx)
+	case asset.FieldMimeType:
+		return m.OldMimeType(ctx)
+	case asset.FieldThumbnailPath:
+		return m.OldThumbnailPath(ctx)
+	case asset.FieldCdnStatus:
+		return m.OldCdnStatus(ctx)
+	case asset.FieldLastSyncedAt:
+		return m.OldLastSyncedAt(ctx)
 	}
 	return nil, fmt.Errorf("unknown Asset field %s", name)
 }
@@ -850,6 +1109,41 @@ func (m *AssetMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetCompressionRatio(v)
 		return nil
+	case asset.FieldContentHash:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetContentHash(v)
+		return nil
+	case asset.FieldMimeType:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetMimeType(v)
+		return nil
+	case asset.FieldThumbnailPath:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetThumbnailPath(v)
+		return nil
+	case asset.FieldCdnStatus:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCdnStatus(v)
+		return nil
+	case asset.FieldLastSyncedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLastSyncedAt(v)
+		return nil
 	}
 	return fmt.Errorf("unknown Asset field %s", name)
 }
@@ -913,6 +1207,15 @@ func (m *AssetMutation) ClearedFields() []string {
 	if m.FieldCleared(asset.FieldCompressionRatio) {
 		fields = append(fields, asset.FieldCompressionRatio)
 	}
+	if m.FieldCleared(asset.FieldContentHash) {
+		fields = append(fields, asset.FieldContentHash)
+	}
+	if m.FieldCleared(asset.FieldThumbnailPath) {
+		fields = append(fields, asset.FieldThumbnailPath)
+	}
+	if m.FieldCleared(asset.FieldLastSyncedAt) {
+		fields = append(fields, asset.FieldLastSyncedAt)
+	}
 	return fields
 }
 
@@ -932,6 +1235,15 @@ func (m *AssetMutation) ClearField(name string) error {
 		return nil
 	case asset.FieldCompressionRatio:
 		m.ClearCompressionRatio()
+		return nil
+	case asset.FieldContentHash:
+		m.ClearContentHash()
+		return nil
+	case asset.FieldThumbnailPath:
+		m.ClearThumbnailPath()
+		return nil
+	case asset.FieldLastSyncedAt:
+		m.ClearLastSyncedAt()
 		return nil
 	}
 	return fmt.Errorf("unknown Asset nullable field %s", name)
@@ -967,6 +1279,21 @@ func (m *AssetMutation) ResetField(name string) error {
 		return nil
 	case asset.FieldCompressionRatio:
 		m.ResetCompressionRatio()
+		return nil
+	case asset.FieldContentHash:
+		m.ResetContentHash()
+		return nil
+	case asset.FieldMimeType:
+		m.ResetMimeType()
+		return nil
+	case asset.FieldThumbnailPath:
+		m.ResetThumbnailPath()
+		return nil
+	case asset.FieldCdnStatus:
+		m.ResetCdnStatus()
+		return nil
+	case asset.FieldLastSyncedAt:
+		m.ResetLastSyncedAt()
 		return nil
 	}
 	return fmt.Errorf("unknown Asset field %s", name)

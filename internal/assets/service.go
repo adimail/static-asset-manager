@@ -2,9 +2,13 @@ package assets
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"io"
 	"log"
+	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
@@ -23,44 +27,82 @@ type FileStorage interface {
 }
 
 type Service struct {
-	client       *ent.Client
-	storage      FileStorage
-	validator    *Validator
-	assetsDir    string
-	preprocessor *preprocessing.Service
+	client            *ent.Client
+	storage           FileStorage
+	validator         *Validator
+	assetsDir         string
+	originalsDir      string
+	thumbnailsDir     string
+	wranglerPath      string
+	cloudflareProject string
+	preprocessor      *preprocessing.Service
 }
 
-func NewService(client *ent.Client, storage FileStorage, validator *Validator, assetsDir string, preprocessor *preprocessing.Service) *Service {
+func NewService(
+	client *ent.Client,
+	storage FileStorage,
+	validator *Validator,
+	assetsDir string,
+	originalsDir string,
+	thumbnailsDir string,
+	wranglerPath string,
+	cloudflareProject string,
+	preprocessor *preprocessing.Service,
+) *Service {
 	return &Service{
-		client:       client,
-		storage:      storage,
-		validator:    validator,
-		assetsDir:    assetsDir,
-		preprocessor: preprocessor,
+		client:            client,
+		storage:           storage,
+		validator:         validator,
+		assetsDir:         assetsDir,
+		originalsDir:      originalsDir,
+		thumbnailsDir:     thumbnailsDir,
+		wranglerPath:      wranglerPath,
+		cloudflareProject: cloudflareProject,
+		preprocessor:      preprocessor,
 	}
 }
 
-func (s *Service) getAbsolutePath(relativePath string) string {
-	abs, _ := filepath.Abs(filepath.Join(s.assetsDir, relativePath))
-	return abs
-}
-
 func (s *Service) Upload(ctx context.Context, req UploadRequest) (*Asset, error) {
-	if err := s.validator.Validate(req); err != nil {
+	mime, err := s.validator.Validate(req.File, req.Filename, req.Size)
+	if err != nil {
 		return nil, err
+	}
+
+	hasher := sha256.New()
+	if _, err := io.Copy(hasher, req.File); err != nil {
+		return nil, fmt.Errorf("failed computing hash: %w", err)
+	}
+	hashStr := hex.EncodeToString(hasher.Sum(nil))
+
+	if _, err := req.File.Seek(0, io.SeekStart); err != nil {
+		return nil, fmt.Errorf("failed resetting stream: %w", err)
+	}
+
+	existing, err := s.client.Asset.Query().
+		Where(asset.ContentHashEQ(hashStr)).
+		WithTags().
+		First(ctx)
+	if err == nil && existing != nil {
+		return s.mapToDomain(existing), nil
 	}
 
 	id := uuid.New().String()
 	ext := strings.ToLower(filepath.Ext(req.Filename))
 	fileType := s.determineFileType(ext)
 
-	managedPath := s.getAbsolutePath(id + ext)
-
-	if err := s.storage.Write(managedPath, req.File); err != nil {
-		return nil, fmt.Errorf("failed to write file to managed folder: %w", err)
+	managedPath, err := filepath.Abs(filepath.Join(s.assetsDir, id+ext))
+	if err != nil {
+		return nil, err
 	}
 
-	saved, err := s.client.Asset.Create().
+	if err := s.storage.Write(managedPath, req.File); err != nil {
+		return nil, fmt.Errorf("failed writing file to storage: %w", err)
+	}
+
+	thumbPath := filepath.Join(s.thumbnailsDir, id+".webp")
+	_ = s.preprocessor.GenerateThumbnail(managedPath, thumbPath, string(fileType))
+
+	builder := s.client.Asset.Create().
 		SetID(id).
 		SetOriginalFilename(req.Filename).
 		SetFileType(string(fileType)).
@@ -69,10 +111,18 @@ func (s *Service) Upload(ctx context.Context, req UploadRequest) (*Asset, error)
 		SetStoragePath(managedPath).
 		SetCreatedAt(time.Now()).
 		SetIsCompressed(false).
-		Save(ctx)
+		SetContentHash(hashStr).
+		SetMimeType(mime).
+		SetCdnStatus("local_only")
+
+	if _, err := os.Stat(thumbPath); err == nil {
+		builder.SetThumbnailPath(thumbPath)
+	}
+
+	saved, err := builder.Save(ctx)
 	if err != nil {
 		s.storage.Delete(managedPath)
-		return nil, fmt.Errorf("failed to save metadata: %w", err)
+		return nil, fmt.Errorf("failed persisting asset record: %w", err)
 	}
 
 	return s.mapToDomain(saved), nil
@@ -128,7 +178,7 @@ func (s *Service) CompressMultiple(ctx context.Context, ids []string) error {
 		ft := FileType(a.FileType)
 		if (ft == FileTypeImage || ft == FileTypeVideo) && !a.IsCompressed {
 			if err := s.preprocessor.Enqueue(ctx, a.ID); err != nil {
-				log.Printf("Failed to enqueue %s: %v", a.ID, err)
+				log.Printf("failed enqueueing asset %s: %v", a.ID, err)
 			}
 		}
 	}
@@ -184,17 +234,19 @@ func (s *Service) Delete(ctx context.Context, id string) error {
 		return err
 	}
 
-	if err := s.storage.Delete(a.StoragePath); err != nil {
-		log.Printf("failed to delete file from managed storage: %s, error: %v", a.StoragePath, err)
-	}
+	_ = s.storage.Delete(a.StoragePath)
 
 	if a.OriginalPath != "" {
-		s.storage.Delete(a.OriginalPath)
+		_ = os.Remove(a.OriginalPath)
 	}
 
-	if _, err := s.client.CompressionJob.Delete().Where(compressionjob.HasAssetWith(asset.ID(id))).Exec(ctx); err != nil {
-		log.Printf("failed to delete compression jobs for asset %s: %v", id, err)
+	if a.ThumbnailPath != "" {
+		_ = os.Remove(a.ThumbnailPath)
 	}
+
+	_, _ = s.client.CompressionJob.Delete().
+		Where(compressionjob.HasAssetWith(asset.ID(id))).
+		Exec(ctx)
 
 	return s.client.Asset.DeleteOneID(id).Exec(ctx)
 }
@@ -206,17 +258,18 @@ func (s *Service) DeleteMultiple(ctx context.Context, ids []string) error {
 	}
 
 	for _, a := range assets {
-		if err := s.storage.Delete(a.StoragePath); err != nil {
-			log.Printf("failed to delete file: %v", err)
-		}
+		_ = s.storage.Delete(a.StoragePath)
 		if a.OriginalPath != "" {
-			s.storage.Delete(a.OriginalPath)
+			_ = os.Remove(a.OriginalPath)
+		}
+		if a.ThumbnailPath != "" {
+			_ = os.Remove(a.ThumbnailPath)
 		}
 	}
 
-	if _, err := s.client.CompressionJob.Delete().Where(compressionjob.HasAssetWith(asset.IDIn(ids...))).Exec(ctx); err != nil {
-		return fmt.Errorf("failed to delete associated compression jobs: %w", err)
-	}
+	_, _ = s.client.CompressionJob.Delete().
+		Where(compressionjob.HasAssetWith(asset.IDIn(ids...))).
+		Exec(ctx)
 
 	_, err = s.client.Asset.Delete().Where(asset.IDIn(ids...)).Exec(ctx)
 	return err
@@ -230,8 +283,67 @@ func (s *Service) Get(ctx context.Context, id string) (*Asset, error) {
 	return s.mapToDomain(a), nil
 }
 
-func (s *Service) GetFullStoragePath(a *Asset) string {
-	return a.StoragePath
+func (s *Service) GetThumbnailPath(ctx context.Context, id string) (string, string, error) {
+	a, err := s.client.Asset.Get(ctx, id)
+	if err != nil {
+		return "", "", err
+	}
+	if a.ThumbnailPath != "" {
+		if _, err := os.Stat(a.ThumbnailPath); err == nil {
+			return a.ThumbnailPath, "image/webp", nil
+		}
+	}
+	return a.StoragePath, a.MimeType, nil
+}
+
+func (s *Service) SyncCDN(ctx context.Context) error {
+	cmd := exec.CommandContext(ctx, s.wranglerPath, "pages", "deploy", "cdn", "--project-name", s.cloudflareProject)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		_, _ = s.client.Asset.Update().
+			Where(asset.CdnStatusEQ("local_only")).
+			SetCdnStatus("failed").
+			Save(ctx)
+		return fmt.Errorf("wrangler error: %s - %w", string(output), err)
+	}
+
+	now := time.Now()
+	_, err = s.client.Asset.Update().
+		SetCdnStatus("live").
+		SetLastSyncedAt(now).
+		Save(ctx)
+	return err
+}
+
+func (s *Service) GetCDNStatus(ctx context.Context) (*CDNStatusResponse, error) {
+	localCount, err := s.client.Asset.Query().Where(asset.CdnStatusEQ("local_only")).Count(ctx)
+	if err != nil {
+		return nil, err
+	}
+	liveCount, err := s.client.Asset.Query().Where(asset.CdnStatusEQ("live")).Count(ctx)
+	if err != nil {
+		return nil, err
+	}
+	failedCount, err := s.client.Asset.Query().Where(asset.CdnStatusEQ("failed")).Count(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	var lastSynced *time.Time
+	latest, err := s.client.Asset.Query().
+		Where(asset.LastSyncedAtNotNil()).
+		Order(ent.Desc(asset.FieldLastSyncedAt)).
+		First(ctx)
+	if err == nil && latest != nil {
+		lastSynced = latest.LastSyncedAt
+	}
+
+	return &CDNStatusResponse{
+		TotalLocalOnly: localCount,
+		TotalLive:      liveCount,
+		TotalFailed:    failedCount,
+		LastSyncedAt:   lastSynced,
+	}, nil
 }
 
 func (s *Service) mapToDomain(e *ent.Asset) *Asset {
@@ -250,6 +362,11 @@ func (s *Service) mapToDomain(e *ent.Asset) *Asset {
 		CreatedAt:        e.CreatedAt,
 		IsCompressed:     e.IsCompressed,
 		CompressionRatio: e.CompressionRatio,
+		ContentHash:      e.ContentHash,
+		MimeType:         e.MimeType,
+		ThumbnailPath:    e.ThumbnailPath,
+		CdnStatus:        e.CdnStatus,
+		LastSyncedAt:     e.LastSyncedAt,
 		Tags:             tags,
 	}
 }

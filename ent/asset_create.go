@@ -108,6 +108,76 @@ func (_c *AssetCreate) SetNillableCompressionRatio(v *float64) *AssetCreate {
 	return _c
 }
 
+// SetContentHash sets the "content_hash" field.
+func (_c *AssetCreate) SetContentHash(v string) *AssetCreate {
+	_c.mutation.SetContentHash(v)
+	return _c
+}
+
+// SetNillableContentHash sets the "content_hash" field if the given value is not nil.
+func (_c *AssetCreate) SetNillableContentHash(v *string) *AssetCreate {
+	if v != nil {
+		_c.SetContentHash(*v)
+	}
+	return _c
+}
+
+// SetMimeType sets the "mime_type" field.
+func (_c *AssetCreate) SetMimeType(v string) *AssetCreate {
+	_c.mutation.SetMimeType(v)
+	return _c
+}
+
+// SetNillableMimeType sets the "mime_type" field if the given value is not nil.
+func (_c *AssetCreate) SetNillableMimeType(v *string) *AssetCreate {
+	if v != nil {
+		_c.SetMimeType(*v)
+	}
+	return _c
+}
+
+// SetThumbnailPath sets the "thumbnail_path" field.
+func (_c *AssetCreate) SetThumbnailPath(v string) *AssetCreate {
+	_c.mutation.SetThumbnailPath(v)
+	return _c
+}
+
+// SetNillableThumbnailPath sets the "thumbnail_path" field if the given value is not nil.
+func (_c *AssetCreate) SetNillableThumbnailPath(v *string) *AssetCreate {
+	if v != nil {
+		_c.SetThumbnailPath(*v)
+	}
+	return _c
+}
+
+// SetCdnStatus sets the "cdn_status" field.
+func (_c *AssetCreate) SetCdnStatus(v string) *AssetCreate {
+	_c.mutation.SetCdnStatus(v)
+	return _c
+}
+
+// SetNillableCdnStatus sets the "cdn_status" field if the given value is not nil.
+func (_c *AssetCreate) SetNillableCdnStatus(v *string) *AssetCreate {
+	if v != nil {
+		_c.SetCdnStatus(*v)
+	}
+	return _c
+}
+
+// SetLastSyncedAt sets the "last_synced_at" field.
+func (_c *AssetCreate) SetLastSyncedAt(v time.Time) *AssetCreate {
+	_c.mutation.SetLastSyncedAt(v)
+	return _c
+}
+
+// SetNillableLastSyncedAt sets the "last_synced_at" field if the given value is not nil.
+func (_c *AssetCreate) SetNillableLastSyncedAt(v *time.Time) *AssetCreate {
+	if v != nil {
+		_c.SetLastSyncedAt(*v)
+	}
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *AssetCreate) SetID(v string) *AssetCreate {
 	_c.mutation.SetID(v)
@@ -195,6 +265,14 @@ func (_c *AssetCreate) defaults() {
 		v := asset.DefaultIsCompressed
 		_c.mutation.SetIsCompressed(v)
 	}
+	if _, ok := _c.mutation.MimeType(); !ok {
+		v := asset.DefaultMimeType
+		_c.mutation.SetMimeType(v)
+	}
+	if _, ok := _c.mutation.CdnStatus(); !ok {
+		v := asset.DefaultCdnStatus
+		_c.mutation.SetCdnStatus(v)
+	}
 	if _, ok := _c.mutation.ID(); !ok {
 		v := asset.DefaultID()
 		_c.mutation.SetID(v)
@@ -223,6 +301,12 @@ func (_c *AssetCreate) check() error {
 	}
 	if _, ok := _c.mutation.IsCompressed(); !ok {
 		return &ValidationError{Name: "is_compressed", err: errors.New(`ent: missing required field "Asset.is_compressed"`)}
+	}
+	if _, ok := _c.mutation.MimeType(); !ok {
+		return &ValidationError{Name: "mime_type", err: errors.New(`ent: missing required field "Asset.mime_type"`)}
+	}
+	if _, ok := _c.mutation.CdnStatus(); !ok {
+		return &ValidationError{Name: "cdn_status", err: errors.New(`ent: missing required field "Asset.cdn_status"`)}
 	}
 	return nil
 }
@@ -294,6 +378,26 @@ func (_c *AssetCreate) createSpec() (*Asset, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.CompressionRatio(); ok {
 		_spec.SetField(asset.FieldCompressionRatio, field.TypeFloat64, value)
 		_node.CompressionRatio = value
+	}
+	if value, ok := _c.mutation.ContentHash(); ok {
+		_spec.SetField(asset.FieldContentHash, field.TypeString, value)
+		_node.ContentHash = value
+	}
+	if value, ok := _c.mutation.MimeType(); ok {
+		_spec.SetField(asset.FieldMimeType, field.TypeString, value)
+		_node.MimeType = value
+	}
+	if value, ok := _c.mutation.ThumbnailPath(); ok {
+		_spec.SetField(asset.FieldThumbnailPath, field.TypeString, value)
+		_node.ThumbnailPath = value
+	}
+	if value, ok := _c.mutation.CdnStatus(); ok {
+		_spec.SetField(asset.FieldCdnStatus, field.TypeString, value)
+		_node.CdnStatus = value
+	}
+	if value, ok := _c.mutation.LastSyncedAt(); ok {
+		_spec.SetField(asset.FieldLastSyncedAt, field.TypeTime, value)
+		_node.LastSyncedAt = &value
 	}
 	if nodes := _c.mutation.TagsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{

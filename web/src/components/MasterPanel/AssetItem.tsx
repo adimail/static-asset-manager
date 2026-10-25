@@ -9,6 +9,9 @@ import {
   CheckSquare,
   Square,
   Zap,
+  Globe,
+  HardDrive,
+  AlertCircle,
 } from "lucide-react";
 import { Asset } from "../../api/types";
 import { useStore } from "../../store/useStore";
@@ -150,15 +153,17 @@ export const AssetItem = memo(
           <div
             className={clsx(
               "flex-none overflow-hidden flex items-center justify-center relative",
-              asset.file_type === "image" ? "bg-surface-highlight" : colorClass,
+              asset.file_type === "image" || asset.file_type === "video"
+                ? "bg-surface-highlight"
+                : colorClass,
               viewMode === "list"
                 ? "w-12 h-12"
                 : "w-full aspect-square rounded bg-surface-highlight/20",
             )}
           >
-            {asset.file_type === "image" ? (
+            {asset.file_type === "image" || asset.file_type === "video" ? (
               <img
-                src={`/api/v1/assets/${asset.id}/download`}
+                src={`/api/v1/assets/${asset.id}/thumbnail`}
                 alt=""
                 className="w-full h-full object-cover"
                 loading="lazy"
@@ -189,7 +194,7 @@ export const AssetItem = memo(
                   : "flex-row justify-center gap-2",
               )}
             >
-              <div className="flex gap-2 text-xs text-text-secondary">
+              <div className="flex items-center gap-2 text-xs text-text-secondary">
                 {viewMode === "list" && (
                   <>
                     <span className="capitalize">{asset.file_type}</span>
@@ -198,6 +203,22 @@ export const AssetItem = memo(
                 )}
                 <span className="font-mono">
                   {formatBytes(asset.file_size_bytes)}
+                </span>
+                <span className="w-1 h-1 rounded-full bg-text-muted/50" />
+                <span className="inline-flex items-center gap-1 text-[10px]">
+                  {asset.cdn_status === "live" ? (
+                    <span className="text-emerald-400 inline-flex items-center gap-0.5">
+                      <Globe size={10} /> CDN
+                    </span>
+                  ) : asset.cdn_status === "failed" ? (
+                    <span className="text-red-400 inline-flex items-center gap-0.5">
+                      <AlertCircle size={10} /> Sync Err
+                    </span>
+                  ) : (
+                    <span className="text-text-muted inline-flex items-center gap-0.5">
+                      <HardDrive size={10} /> Local
+                    </span>
+                  )}
                 </span>
               </div>
 

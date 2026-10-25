@@ -21,6 +21,10 @@ export interface Asset {
   created_at: string;
   is_compressed: boolean;
   compression_ratio?: number;
+  content_hash?: string;
+  mime_type: string;
+  cdn_status: "local_only" | "live" | "failed";
+  last_synced_at?: string;
   tags: Tag[];
 }
 
@@ -29,4 +33,11 @@ export interface Assets {
   total_count: number;
   page: number;
   limit: number;
+}
+
+export interface CDNStatus {
+  total_local_only: number;
+  total_live: number;
+  total_failed: number;
+  last_synced_at?: string;
 }

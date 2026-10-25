@@ -35,6 +35,16 @@ type Asset struct {
 	OriginalPath string `json:"original_path,omitempty"`
 	// CompressionRatio holds the value of the "compression_ratio" field.
 	CompressionRatio float64 `json:"compression_ratio,omitempty"`
+	// ContentHash holds the value of the "content_hash" field.
+	ContentHash string `json:"content_hash,omitempty"`
+	// MimeType holds the value of the "mime_type" field.
+	MimeType string `json:"mime_type,omitempty"`
+	// ThumbnailPath holds the value of the "thumbnail_path" field.
+	ThumbnailPath string `json:"thumbnail_path,omitempty"`
+	// CdnStatus holds the value of the "cdn_status" field.
+	CdnStatus string `json:"cdn_status,omitempty"`
+	// LastSyncedAt holds the value of the "last_synced_at" field.
+	LastSyncedAt *time.Time `json:"last_synced_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the AssetQuery when eager-loading is set.
 	Edges        AssetEdges `json:"edges"`
@@ -81,9 +91,9 @@ func (*Asset) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullFloat64)
 		case asset.FieldFileSizeBytes:
 			values[i] = new(sql.NullInt64)
-		case asset.FieldID, asset.FieldOriginalFilename, asset.FieldFileType, asset.FieldExtension, asset.FieldStoragePath, asset.FieldOriginalPath:
+		case asset.FieldID, asset.FieldOriginalFilename, asset.FieldFileType, asset.FieldExtension, asset.FieldStoragePath, asset.FieldOriginalPath, asset.FieldContentHash, asset.FieldMimeType, asset.FieldThumbnailPath, asset.FieldCdnStatus:
 			values[i] = new(sql.NullString)
-		case asset.FieldCreatedAt:
+		case asset.FieldCreatedAt, asset.FieldLastSyncedAt:
 			values[i] = new(sql.NullTime)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -160,6 +170,37 @@ func (_m *Asset) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.CompressionRatio = value.Float64
 			}
+		case asset.FieldContentHash:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field content_hash", values[i])
+			} else if value.Valid {
+				_m.ContentHash = value.String
+			}
+		case asset.FieldMimeType:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field mime_type", values[i])
+			} else if value.Valid {
+				_m.MimeType = value.String
+			}
+		case asset.FieldThumbnailPath:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field thumbnail_path", values[i])
+			} else if value.Valid {
+				_m.ThumbnailPath = value.String
+			}
+		case asset.FieldCdnStatus:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field cdn_status", values[i])
+			} else if value.Valid {
+				_m.CdnStatus = value.String
+			}
+		case asset.FieldLastSyncedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field last_synced_at", values[i])
+			} else if value.Valid {
+				_m.LastSyncedAt = new(time.Time)
+				*_m.LastSyncedAt = value.Time
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -232,6 +273,23 @@ func (_m *Asset) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("compression_ratio=")
 	builder.WriteString(fmt.Sprintf("%v", _m.CompressionRatio))
+	builder.WriteString(", ")
+	builder.WriteString("content_hash=")
+	builder.WriteString(_m.ContentHash)
+	builder.WriteString(", ")
+	builder.WriteString("mime_type=")
+	builder.WriteString(_m.MimeType)
+	builder.WriteString(", ")
+	builder.WriteString("thumbnail_path=")
+	builder.WriteString(_m.ThumbnailPath)
+	builder.WriteString(", ")
+	builder.WriteString("cdn_status=")
+	builder.WriteString(_m.CdnStatus)
+	builder.WriteString(", ")
+	if v := _m.LastSyncedAt; v != nil {
+		builder.WriteString("last_synced_at=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
 	builder.WriteByte(')')
 	return builder.String()
 }

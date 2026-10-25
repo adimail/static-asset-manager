@@ -3,7 +3,6 @@ package preprocessing
 import (
 	"context"
 	"fmt"
-	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -29,7 +28,7 @@ const (
 type Service struct {
 	client *ent.Client
 	config config.CompressionConfig
-	queue  chan string // Asset IDs
+	queue  chan string
 	wg     sync.WaitGroup
 }
 
@@ -55,7 +54,6 @@ func (s *Service) Enqueue(ctx context.Context, assetID string) error {
 		return nil
 	}
 
-	// Create job record
 	_, err := s.client.CompressionJob.Create().
 		SetAssetID(assetID).
 		SetStatus(string(StatusPending)).
@@ -74,7 +72,6 @@ func (s *Service) Enqueue(ctx context.Context, assetID string) error {
 
 func (s *Service) worker(id int) {
 	defer s.wg.Done()
-	log.Printf("Compression worker %d started", id)
 
 	for assetID := range s.queue {
 		s.processJob(assetID)
@@ -83,24 +80,19 @@ func (s *Service) worker(id int) {
 
 func (s *Service) processJob(assetID string) {
 	ctx := context.Background()
-	log.Printf("[Job %s] Starting compression...", assetID)
 	startTime := time.Now()
 
-	// Fetch asset and job
 	a, err := s.client.Asset.Query().Where(asset.ID(assetID)).Only(ctx)
 	if err != nil {
-		log.Printf("[Job %s] Worker failed to fetch asset: %v", assetID, err)
 		return
 	}
 
-	// Find the pending job
 	job, err := a.QueryCompressionJobs().
 		Where(compressionjob.StatusEQ(string(StatusPending))).
 		Order(ent.Desc(compressionjob.FieldStartedAt)).
 		First(ctx)
 
 	if err != nil {
-		// Create a new job if missing (recovery)
 		job, _ = s.client.CompressionJob.Create().
 			SetAssetID(assetID).
 			SetStatus(string(StatusProcessing)).
@@ -113,16 +105,13 @@ func (s *Service) processJob(assetID string) {
 			Save(ctx)
 	}
 
-	// Determine paths
-	originalPath := a.StoragePath
-	ext := filepath.Ext(originalPath)
-	tempOutput := strings.TrimSuffix(originalPath, ext) + "_compressed" + ext
+	publicStoragePath := a.StoragePath
+	ext := filepath.Ext(publicStoragePath)
+	tempOutput := strings.TrimSuffix(publicStoragePath, ext) + "_compressed" + ext
 
-	// Run FFmpeg
-	err = s.runFFmpeg(originalPath, tempOutput, a.FileType)
+	err = s.runFFmpeg(publicStoragePath, tempOutput, a.FileType)
 	if err != nil {
 		errMsg := err.Error()
-		log.Printf("[Job %s] FFmpeg failed: %v", assetID, err)
 		job.Update().
 			SetStatus(string(StatusFailed)).
 			SetError(errMsg).
@@ -130,22 +119,54 @@ func (s *Service) processJob(assetID string) {
 		return
 	}
 
-	// Calculate stats
-	infoOrig, _ := os.Stat(originalPath)
-	infoComp, _ := os.Stat(tempOutput)
+	infoOrig, errOrig := os.Stat(publicStoragePath)
+	infoComp, errComp := os.Stat(tempOutput)
+	if errOrig != nil || errComp != nil {
+		job.Update().
+			SetStatus(string(StatusFailed)).
+			SetError("failed stat on compressed output").
+			Save(ctx)
+		return
+	}
+
 	ratio := float64(infoComp.Size()) / float64(infoOrig.Size())
 
-	// Move files
-	backupPath := strings.TrimSuffix(originalPath, ext) + "_original" + ext
-	os.Rename(originalPath, backupPath)
-	os.Rename(tempOutput, originalPath)
+	if err := os.MkdirAll(s.config.OriginalsDir, 0o755); err != nil {
+		job.Update().
+			SetStatus(string(StatusFailed)).
+			SetError("failed to create private originals directory").
+			Save(ctx)
+		return
+	}
 
-	// Update DB
+	isolatedOriginalPath := filepath.Join(s.config.OriginalsDir, assetID+"_original"+ext)
+
+	if err := os.Rename(publicStoragePath, isolatedOriginalPath); err != nil {
+		job.Update().
+			SetStatus(string(StatusFailed)).
+			SetError("failed isolating original file").
+			Save(ctx)
+		return
+	}
+
+	if err := os.Rename(tempOutput, publicStoragePath); err != nil {
+		os.Rename(isolatedOriginalPath, publicStoragePath)
+		job.Update().
+			SetStatus(string(StatusFailed)).
+			SetError("failed moving optimized file to public path").
+			Save(ctx)
+		return
+	}
+
+	thumbPath := filepath.Join(s.config.ThumbnailsDir, assetID+".webp")
+	_ = s.GenerateThumbnail(publicStoragePath, thumbPath, a.FileType)
+
 	s.client.Asset.UpdateOneID(assetID).
 		SetIsCompressed(true).
-		SetOriginalPath(backupPath).
+		SetOriginalPath(isolatedOriginalPath).
 		SetCompressionRatio(ratio).
 		SetFileSizeBytes(infoComp.Size()).
+		SetCdnStatus("local_only").
 		Save(ctx)
 
 	job.Update().
@@ -153,15 +174,46 @@ func (s *Service) processJob(assetID string) {
 		SetProgress(100).
 		SetCompletedAt(time.Now()).
 		Save(ctx)
+}
 
-	log.Printf("[Job %s] Compression completed in %v. Ratio: %.2f", assetID, time.Since(startTime), ratio)
+func (s *Service) GenerateThumbnail(input, output, fileType string) error {
+	if err := os.MkdirAll(filepath.Dir(output), 0o755); err != nil {
+		return err
+	}
+
+	var args []string
+	if fileType == "image" {
+		args = []string{
+			"-i", input,
+			"-vf", "scale=256:256:force_original_aspect_ratio=decrease,format=rgba",
+			"-vcodec", "libwebp",
+			"-lossless", "0",
+			"-compression_level", "4",
+			"-q:v", "75",
+			"-y", output,
+		}
+	} else if fileType == "video" {
+		args = []string{
+			"-ss", "00:00:01",
+			"-i", input,
+			"-vframes", "1",
+			"-vf", "scale=256:256:force_original_aspect_ratio=decrease",
+			"-vcodec", "libwebp",
+			"-q:v", "75",
+			"-y", output,
+		}
+	} else {
+		return nil
+	}
+
+	cmd := exec.Command(s.config.FFmpegPath, args...)
+	return cmd.Run()
 }
 
 func (s *Service) runFFmpeg(input, output, fileType string) error {
 	var args []string
 
 	if fileType == "video" {
-		// H.264, CRF 23, AAC Audio
 		args = []string{
 			"-i", input,
 			"-c:v", "libx264",
@@ -173,12 +225,20 @@ func (s *Service) runFFmpeg(input, output, fileType string) error {
 			"-y", output,
 		}
 	} else if fileType == "image" {
-		// Scale down if too large, optimize
-		args = []string{
-			"-i", input,
-			"-vf", "scale='min(4096,iw)':-1",
-			"-q:v", fmt.Sprintf("%d", s.config.ImageQuality),
-			"-y", output,
+		ext := strings.ToLower(filepath.Ext(input))
+		if ext == ".gif" {
+			args = []string{
+				"-i", input,
+				"-vf", "fps=15,scale='min(1080,iw)':-1:flags=lanczos,split[s0][s1];[s0]palettegen=max_colors=128[p];[s1][p]paletteuse=dither=bayer",
+				"-y", output,
+			}
+		} else {
+			args = []string{
+				"-i", input,
+				"-vf", "scale='min(4096,iw)':-1",
+				"-q:v", fmt.Sprintf("%d", s.config.ImageQuality),
+				"-y", output,
+			}
 		}
 	} else {
 		return fmt.Errorf("unsupported file type for compression")

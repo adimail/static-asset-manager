@@ -182,6 +182,94 @@ func (_u *AssetUpdate) ClearCompressionRatio() *AssetUpdate {
 	return _u
 }
 
+// SetContentHash sets the "content_hash" field.
+func (_u *AssetUpdate) SetContentHash(v string) *AssetUpdate {
+	_u.mutation.SetContentHash(v)
+	return _u
+}
+
+// SetNillableContentHash sets the "content_hash" field if the given value is not nil.
+func (_u *AssetUpdate) SetNillableContentHash(v *string) *AssetUpdate {
+	if v != nil {
+		_u.SetContentHash(*v)
+	}
+	return _u
+}
+
+// ClearContentHash clears the value of the "content_hash" field.
+func (_u *AssetUpdate) ClearContentHash() *AssetUpdate {
+	_u.mutation.ClearContentHash()
+	return _u
+}
+
+// SetMimeType sets the "mime_type" field.
+func (_u *AssetUpdate) SetMimeType(v string) *AssetUpdate {
+	_u.mutation.SetMimeType(v)
+	return _u
+}
+
+// SetNillableMimeType sets the "mime_type" field if the given value is not nil.
+func (_u *AssetUpdate) SetNillableMimeType(v *string) *AssetUpdate {
+	if v != nil {
+		_u.SetMimeType(*v)
+	}
+	return _u
+}
+
+// SetThumbnailPath sets the "thumbnail_path" field.
+func (_u *AssetUpdate) SetThumbnailPath(v string) *AssetUpdate {
+	_u.mutation.SetThumbnailPath(v)
+	return _u
+}
+
+// SetNillableThumbnailPath sets the "thumbnail_path" field if the given value is not nil.
+func (_u *AssetUpdate) SetNillableThumbnailPath(v *string) *AssetUpdate {
+	if v != nil {
+		_u.SetThumbnailPath(*v)
+	}
+	return _u
+}
+
+// ClearThumbnailPath clears the value of the "thumbnail_path" field.
+func (_u *AssetUpdate) ClearThumbnailPath() *AssetUpdate {
+	_u.mutation.ClearThumbnailPath()
+	return _u
+}
+
+// SetCdnStatus sets the "cdn_status" field.
+func (_u *AssetUpdate) SetCdnStatus(v string) *AssetUpdate {
+	_u.mutation.SetCdnStatus(v)
+	return _u
+}
+
+// SetNillableCdnStatus sets the "cdn_status" field if the given value is not nil.
+func (_u *AssetUpdate) SetNillableCdnStatus(v *string) *AssetUpdate {
+	if v != nil {
+		_u.SetCdnStatus(*v)
+	}
+	return _u
+}
+
+// SetLastSyncedAt sets the "last_synced_at" field.
+func (_u *AssetUpdate) SetLastSyncedAt(v time.Time) *AssetUpdate {
+	_u.mutation.SetLastSyncedAt(v)
+	return _u
+}
+
+// SetNillableLastSyncedAt sets the "last_synced_at" field if the given value is not nil.
+func (_u *AssetUpdate) SetNillableLastSyncedAt(v *time.Time) *AssetUpdate {
+	if v != nil {
+		_u.SetLastSyncedAt(*v)
+	}
+	return _u
+}
+
+// ClearLastSyncedAt clears the value of the "last_synced_at" field.
+func (_u *AssetUpdate) ClearLastSyncedAt() *AssetUpdate {
+	_u.mutation.ClearLastSyncedAt()
+	return _u
+}
+
 // AddTagIDs adds the "tags" edge to the Tag entity by IDs.
 func (_u *AssetUpdate) AddTagIDs(ids ...string) *AssetUpdate {
 	_u.mutation.AddTagIDs(ids...)
@@ -333,6 +421,30 @@ func (_u *AssetUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.CompressionRatioCleared() {
 		_spec.ClearField(asset.FieldCompressionRatio, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.ContentHash(); ok {
+		_spec.SetField(asset.FieldContentHash, field.TypeString, value)
+	}
+	if _u.mutation.ContentHashCleared() {
+		_spec.ClearField(asset.FieldContentHash, field.TypeString)
+	}
+	if value, ok := _u.mutation.MimeType(); ok {
+		_spec.SetField(asset.FieldMimeType, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.ThumbnailPath(); ok {
+		_spec.SetField(asset.FieldThumbnailPath, field.TypeString, value)
+	}
+	if _u.mutation.ThumbnailPathCleared() {
+		_spec.ClearField(asset.FieldThumbnailPath, field.TypeString)
+	}
+	if value, ok := _u.mutation.CdnStatus(); ok {
+		_spec.SetField(asset.FieldCdnStatus, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.LastSyncedAt(); ok {
+		_spec.SetField(asset.FieldLastSyncedAt, field.TypeTime, value)
+	}
+	if _u.mutation.LastSyncedAtCleared() {
+		_spec.ClearField(asset.FieldLastSyncedAt, field.TypeTime)
 	}
 	if _u.mutation.TagsCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -596,6 +708,94 @@ func (_u *AssetUpdateOne) ClearCompressionRatio() *AssetUpdateOne {
 	return _u
 }
 
+// SetContentHash sets the "content_hash" field.
+func (_u *AssetUpdateOne) SetContentHash(v string) *AssetUpdateOne {
+	_u.mutation.SetContentHash(v)
+	return _u
+}
+
+// SetNillableContentHash sets the "content_hash" field if the given value is not nil.
+func (_u *AssetUpdateOne) SetNillableContentHash(v *string) *AssetUpdateOne {
+	if v != nil {
+		_u.SetContentHash(*v)
+	}
+	return _u
+}
+
+// ClearContentHash clears the value of the "content_hash" field.
+func (_u *AssetUpdateOne) ClearContentHash() *AssetUpdateOne {
+	_u.mutation.ClearContentHash()
+	return _u
+}
+
+// SetMimeType sets the "mime_type" field.
+func (_u *AssetUpdateOne) SetMimeType(v string) *AssetUpdateOne {
+	_u.mutation.SetMimeType(v)
+	return _u
+}
+
+// SetNillableMimeType sets the "mime_type" field if the given value is not nil.
+func (_u *AssetUpdateOne) SetNillableMimeType(v *string) *AssetUpdateOne {
+	if v != nil {
+		_u.SetMimeType(*v)
+	}
+	return _u
+}
+
+// SetThumbnailPath sets the "thumbnail_path" field.
+func (_u *AssetUpdateOne) SetThumbnailPath(v string) *AssetUpdateOne {
+	_u.mutation.SetThumbnailPath(v)
+	return _u
+}
+
+// SetNillableThumbnailPath sets the "thumbnail_path" field if the given value is not nil.
+func (_u *AssetUpdateOne) SetNillableThumbnailPath(v *string) *AssetUpdateOne {
+	if v != nil {
+		_u.SetThumbnailPath(*v)
+	}
+	return _u
+}
+
+// ClearThumbnailPath clears the value of the "thumbnail_path" field.
+func (_u *AssetUpdateOne) ClearThumbnailPath() *AssetUpdateOne {
+	_u.mutation.ClearThumbnailPath()
+	return _u
+}
+
+// SetCdnStatus sets the "cdn_status" field.
+func (_u *AssetUpdateOne) SetCdnStatus(v string) *AssetUpdateOne {
+	_u.mutation.SetCdnStatus(v)
+	return _u
+}
+
+// SetNillableCdnStatus sets the "cdn_status" field if the given value is not nil.
+func (_u *AssetUpdateOne) SetNillableCdnStatus(v *string) *AssetUpdateOne {
+	if v != nil {
+		_u.SetCdnStatus(*v)
+	}
+	return _u
+}
+
+// SetLastSyncedAt sets the "last_synced_at" field.
+func (_u *AssetUpdateOne) SetLastSyncedAt(v time.Time) *AssetUpdateOne {
+	_u.mutation.SetLastSyncedAt(v)
+	return _u
+}
+
+// SetNillableLastSyncedAt sets the "last_synced_at" field if the given value is not nil.
+func (_u *AssetUpdateOne) SetNillableLastSyncedAt(v *time.Time) *AssetUpdateOne {
+	if v != nil {
+		_u.SetLastSyncedAt(*v)
+	}
+	return _u
+}
+
+// ClearLastSyncedAt clears the value of the "last_synced_at" field.
+func (_u *AssetUpdateOne) ClearLastSyncedAt() *AssetUpdateOne {
+	_u.mutation.ClearLastSyncedAt()
+	return _u
+}
+
 // AddTagIDs adds the "tags" edge to the Tag entity by IDs.
 func (_u *AssetUpdateOne) AddTagIDs(ids ...string) *AssetUpdateOne {
 	_u.mutation.AddTagIDs(ids...)
@@ -777,6 +977,30 @@ func (_u *AssetUpdateOne) sqlSave(ctx context.Context) (_node *Asset, err error)
 	}
 	if _u.mutation.CompressionRatioCleared() {
 		_spec.ClearField(asset.FieldCompressionRatio, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.ContentHash(); ok {
+		_spec.SetField(asset.FieldContentHash, field.TypeString, value)
+	}
+	if _u.mutation.ContentHashCleared() {
+		_spec.ClearField(asset.FieldContentHash, field.TypeString)
+	}
+	if value, ok := _u.mutation.MimeType(); ok {
+		_spec.SetField(asset.FieldMimeType, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.ThumbnailPath(); ok {
+		_spec.SetField(asset.FieldThumbnailPath, field.TypeString, value)
+	}
+	if _u.mutation.ThumbnailPathCleared() {
+		_spec.ClearField(asset.FieldThumbnailPath, field.TypeString)
+	}
+	if value, ok := _u.mutation.CdnStatus(); ok {
+		_spec.SetField(asset.FieldCdnStatus, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.LastSyncedAt(); ok {
+		_spec.SetField(asset.FieldLastSyncedAt, field.TypeTime, value)
+	}
+	if _u.mutation.LastSyncedAtCleared() {
+		_spec.ClearField(asset.FieldLastSyncedAt, field.TypeTime)
 	}
 	if _u.mutation.TagsCleared() {
 		edge := &sqlgraph.EdgeSpec{

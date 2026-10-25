@@ -1,13 +1,16 @@
 import { useMemo, useEffect, useRef } from "react";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import {
   useAssets,
   useBulkDeleteAssets,
   useBulkCompressAssets,
+  useCdnStatus,
+  useSyncCdn,
 } from "../../hooks/useAssets";
 import { useStore } from "../../store/useStore";
 import { FilterBar } from "./FilterBar";
 import { AssetItem } from "./AssetItem";
-import { FolderOpen, Info } from "lucide-react";
+import { FolderOpen, Info, Globe, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import {
   Pagination,
@@ -38,9 +41,11 @@ export function MasterPanel() {
   } = useStore();
 
   const { data, isLoading } = useAssets(currentPage, 50, tagFilter);
+  const { data: cdnStatus } = useCdnStatus();
+  const { mutate: syncCdn, isPending: isSyncing } = useSyncCdn();
   const { mutate: bulkDelete } = useBulkDeleteAssets();
   const { mutate: bulkCompress } = useBulkCompressAssets();
-  const listRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   const processedAssets = useMemo(() => {
     if (!data?.assets) return [];
@@ -85,6 +90,13 @@ export function MasterPanel() {
 
   const totalPages = data ? Math.ceil(data.total_count / data.limit) : 0;
 
+  const rowVirtualizer = useVirtualizer({
+    count: processedAssets.length,
+    getScrollElement: () => scrollRef.current,
+    estimateSize: () => (viewMode === "list" ? 72 : 180),
+    overscan: 5,
+  });
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const isInput = ["INPUT", "TEXTAREA", "SELECT"].includes(
@@ -114,15 +126,6 @@ export function MasterPanel() {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [processedAssets, selectedAssetId, selectAsset]);
-
-  useEffect(() => {
-    if (selectedAssetId) {
-      const element = document.getElementById(`asset-${selectedAssetId}`);
-      if (element) {
-        element.scrollIntoView({ block: "nearest", behavior: "auto" });
-      }
-    }
-  }, [selectedAssetId]);
 
   const handleBulkDelete = () => {
     if (selectedAssetIds.length === 0) return;
@@ -159,26 +162,55 @@ export function MasterPanel() {
   };
 
   return (
-    <div className="flex flex-col h-full bg-gradient-to-b from-sidebar to-bg border-r border-border relative">
+    <div className="flex flex-col h-full bg-bg border-r border-border relative">
       <FilterBar />
 
       <div className="px-4 py-2 flex items-center justify-between bg-surface-highlight/10 border-b border-border/30">
-        <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-text-muted">
-          <Info size={12} />
-          <span>
-            Showing {processedAssets.length} of {data?.total_count || 0} assets
-          </span>
+        <div className="flex items-center gap-4 text-[10px] font-bold uppercase tracking-widest text-text-muted">
+          <div className="flex items-center gap-1.5">
+            <Info size={12} />
+            <span>
+              Showing {processedAssets.length} of {data?.total_count || 0}
+            </span>
+          </div>
+
+          {cdnStatus && (
+            <div className="flex items-center gap-2">
+              <span className="flex items-center gap-1 text-emerald-400">
+                <Globe size={11} /> {cdnStatus.total_live} Live
+              </span>
+              {cdnStatus.total_local_only > 0 && (
+                <span className="text-amber-400">
+                  {cdnStatus.total_local_only} Pending
+                </span>
+              )}
+            </div>
+          )}
         </div>
-        <button
-          onClick={toggleSelectionMode}
-          className="text-[10px] font-bold uppercase tracking-widest text-primary hover:underline cursor-pointer"
-        >
-          {isSelectionMode ? "Cancel Selection" : "Select Multiple"}
-        </button>
+
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => syncCdn()}
+            disabled={isSyncing}
+            className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest text-primary hover:text-primary-hover disabled:opacity-50 cursor-pointer"
+          >
+            <RefreshCw
+              size={11}
+              className={clsx(isSyncing && "animate-spin")}
+            />
+            <span>{isSyncing ? "Syncing..." : "Sync CDN"}</span>
+          </button>
+          <button
+            onClick={toggleSelectionMode}
+            className="text-[10px] font-bold uppercase tracking-widest text-text-secondary hover:text-text-primary cursor-pointer"
+          >
+            {isSelectionMode ? "Cancel" : "Select"}
+          </button>
+        </div>
       </div>
 
       <div
-        ref={listRef}
+        ref={scrollRef}
         className="flex-1 overflow-y-auto p-3 focus:outline-none pb-20"
       >
         {isLoading ? (
@@ -190,17 +222,37 @@ export function MasterPanel() {
             <FolderOpen size={32} className="opacity-50 mb-4" />
             <p>No files found</p>
           </div>
+        ) : viewMode === "grid" ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+            {processedAssets.map((asset) => (
+              <AssetItem key={asset.id} asset={asset} viewMode="grid" />
+            ))}
+          </div>
         ) : (
           <div
-            className={clsx(
-              viewMode === "grid"
-                ? "grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3"
-                : "space-y-2",
-            )}
+            style={{
+              height: `${rowVirtualizer.getTotalSize()}px`,
+              width: "100%",
+              position: "relative",
+            }}
           >
-            {processedAssets.map((asset) => (
-              <AssetItem key={asset.id} asset={asset} viewMode={viewMode} />
-            ))}
+            {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+              const asset = processedAssets[virtualRow.index];
+              return (
+                <div
+                  key={asset.id}
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    width: "100%",
+                    transform: `translateY(${virtualRow.start}px)`,
+                  }}
+                >
+                  <AssetItem asset={asset} viewMode="list" />
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
@@ -213,13 +265,13 @@ export function MasterPanel() {
             </span>
             <button
               onClick={() => selectAll(processedAssets.map((a) => a.id))}
-              className="text-xs text-text-secondary hover:underline"
+              className="text-xs text-text-secondary hover:underline cursor-pointer"
             >
               Select All
             </button>
             <button
               onClick={clearSelection}
-              className="text-xs text-text-secondary hover:underline"
+              className="text-xs text-text-secondary hover:underline cursor-pointer"
             >
               Clear
             </button>
@@ -227,19 +279,19 @@ export function MasterPanel() {
           <div className="flex gap-2">
             <button
               onClick={handleBulkCompress}
-              className="px-3 py-1 bg-amber-600 text-white text-xs font-bold rounded hover:bg-amber-700 cursor-pointer"
+              className="px-3 py-1 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded cursor-pointer"
             >
               Compress
             </button>
             <button
               onClick={handleBulkDelete}
-              className="px-3 py-1 bg-red-500 text-white text-xs font-bold rounded hover:bg-red-600 cursor-pointer"
+              className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded cursor-pointer"
             >
               Delete
             </button>
             <button
               onClick={handleBulkTag}
-              className="px-3 py-1 bg-primary text-white text-xs font-bold rounded hover:bg-primary-hover cursor-pointer"
+              className="px-3 py-1 bg-primary hover:bg-primary-hover text-background text-xs font-bold rounded cursor-pointer"
             >
               Tag
             </button>

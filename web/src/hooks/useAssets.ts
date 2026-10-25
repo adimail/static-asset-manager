@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../api/client";
-import { Assets, Asset } from "../api/types";
+import { Assets, Asset, CDNStatus } from "../api/types";
 import { toast } from "sonner";
 
 export function useAssets(
@@ -32,6 +32,7 @@ export function useDeleteAsset() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["assets"] });
+      queryClient.invalidateQueries({ queryKey: ["cdn-status"] });
     },
   });
 }
@@ -69,6 +70,7 @@ export function useBulkDeleteAssets() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["assets"] });
+      queryClient.invalidateQueries({ queryKey: ["cdn-status"] });
     },
   });
 }
@@ -101,6 +103,35 @@ export function useBulkCompressAssets() {
     },
     onError: () => {
       toast.error("Failed to start bulk compression");
+    },
+  });
+}
+
+export function useCdnStatus() {
+  return useQuery({
+    queryKey: ["cdn-status"],
+    queryFn: async () => {
+      const { data } = await api.get<CDNStatus>("/cdn/status");
+      return data;
+    },
+    refetchInterval: 10000,
+  });
+}
+
+export function useSyncCdn() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async () => {
+      const { data } = await api.post("/cdn/sync");
+      return data;
+    },
+    onSuccess: () => {
+      toast.success("CDN synced successfully");
+      queryClient.invalidateQueries({ queryKey: ["assets"] });
+      queryClient.invalidateQueries({ queryKey: ["cdn-status"] });
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data || "CDN sync failed");
     },
   });
 }

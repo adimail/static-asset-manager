@@ -32,6 +32,16 @@ const (
 	FieldOriginalPath = "original_path"
 	// FieldCompressionRatio holds the string denoting the compression_ratio field in the database.
 	FieldCompressionRatio = "compression_ratio"
+	// FieldContentHash holds the string denoting the content_hash field in the database.
+	FieldContentHash = "content_hash"
+	// FieldMimeType holds the string denoting the mime_type field in the database.
+	FieldMimeType = "mime_type"
+	// FieldThumbnailPath holds the string denoting the thumbnail_path field in the database.
+	FieldThumbnailPath = "thumbnail_path"
+	// FieldCdnStatus holds the string denoting the cdn_status field in the database.
+	FieldCdnStatus = "cdn_status"
+	// FieldLastSyncedAt holds the string denoting the last_synced_at field in the database.
+	FieldLastSyncedAt = "last_synced_at"
 	// EdgeTags holds the string denoting the tags edge name in mutations.
 	EdgeTags = "tags"
 	// EdgeCompressionJobs holds the string denoting the compression_jobs edge name in mutations.
@@ -64,6 +74,11 @@ var Columns = []string{
 	FieldIsCompressed,
 	FieldOriginalPath,
 	FieldCompressionRatio,
+	FieldContentHash,
+	FieldMimeType,
+	FieldThumbnailPath,
+	FieldCdnStatus,
+	FieldLastSyncedAt,
 }
 
 var (
@@ -87,6 +102,10 @@ var (
 	DefaultCreatedAt func() time.Time
 	// DefaultIsCompressed holds the default value on creation for the "is_compressed" field.
 	DefaultIsCompressed bool
+	// DefaultMimeType holds the default value on creation for the "mime_type" field.
+	DefaultMimeType string
+	// DefaultCdnStatus holds the default value on creation for the "cdn_status" field.
+	DefaultCdnStatus string
 	// DefaultID holds the default value on creation for the "id" field.
 	DefaultID func() string
 )
@@ -142,6 +161,31 @@ func ByOriginalPath(opts ...sql.OrderTermOption) OrderOption {
 // ByCompressionRatio orders the results by the compression_ratio field.
 func ByCompressionRatio(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldCompressionRatio, opts...).ToFunc()
+}
+
+// ByContentHash orders the results by the content_hash field.
+func ByContentHash(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldContentHash, opts...).ToFunc()
+}
+
+// ByMimeType orders the results by the mime_type field.
+func ByMimeType(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldMimeType, opts...).ToFunc()
+}
+
+// ByThumbnailPath orders the results by the thumbnail_path field.
+func ByThumbnailPath(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldThumbnailPath, opts...).ToFunc()
+}
+
+// ByCdnStatus orders the results by the cdn_status field.
+func ByCdnStatus(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCdnStatus, opts...).ToFunc()
+}
+
+// ByLastSyncedAt orders the results by the last_synced_at field.
+func ByLastSyncedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldLastSyncedAt, opts...).ToFunc()
 }
 
 // ByTagsCount orders the results by tags count.

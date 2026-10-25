@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -34,7 +35,7 @@ func (h *AssetHandler) Upload(w http.ResponseWriter, r *http.Request) {
 
 	asset, err := h.service.Upload(r.Context(), req)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -138,6 +139,44 @@ func (h *AssetHandler) Download(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fullPath := h.service.GetFullStoragePath(asset)
-	http.ServeFile(w, r, fullPath)
+	w.Header().Set("Content-Security-Policy", "default-src 'none'; style-src 'unsafe-inline'; sandbox")
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+	if asset.FileType == "document" || asset.Extension == ".svg" || asset.Extension == ".html" {
+		w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%q", asset.OriginalFilename))
+	}
+
+	http.ServeFile(w, r, asset.StoragePath)
+}
+
+func (h *AssetHandler) Thumbnail(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	path, mime, err := h.service.GetThumbnailPath(r.Context(), vars["id"])
+	if err != nil {
+		http.Error(w, "Thumbnail not found", http.StatusNotFound)
+		return
+	}
+
+	w.Header().Set("Content-Type", mime)
+	w.Header().Set("Cache-Control", "public, max-age=86400, stale-while-revalidate=604800")
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+	http.ServeFile(w, r, path)
+}
+
+func (h *AssetHandler) SyncCDN(w http.ResponseWriter, r *http.Request) {
+	if err := h.service.SyncCDN(r.Context()); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]string{"status": "synced"})
+}
+
+func (h *AssetHandler) GetCDNStatus(w http.ResponseWriter, r *http.Request) {
+	status, err := h.service.GetCDNStatus(r.Context())
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(status)
 }

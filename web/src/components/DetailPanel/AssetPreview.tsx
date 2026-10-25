@@ -11,6 +11,9 @@ import {
   Zap,
   Tag as TagIcon,
   Pencil,
+  Globe,
+  HardDrive,
+  AlertCircle,
 } from "lucide-react";
 import { Asset } from "../../api/types";
 import { useStore } from "../../store/useStore";
@@ -70,9 +73,11 @@ export function AssetPreview({ asset }: { asset: Asset }) {
     textExtensions.includes(asset.extension.toLowerCase());
 
   const baseUrl = import.meta.env.VITE_ASSET_BASE_URL;
-  const publicUrl = baseUrl
-    ? `${baseUrl.replace(/\/$/, "")}/${asset.id}${asset.extension}`
-    : `/api/v1/assets/${asset.id}/download`;
+  const isLiveOnCdn = asset.cdn_status === "live";
+  const publicUrl =
+    isLiveOnCdn && baseUrl
+      ? `${baseUrl.replace(/\/$/, "")}/${asset.id}${asset.extension}`
+      : `/api/v1/assets/${asset.id}/download`;
 
   const canCompress =
     (asset.file_type === "image" || asset.file_type === "video") &&
@@ -167,21 +172,21 @@ export function AssetPreview({ asset }: { asset: Asset }) {
     <div className="h-full flex flex-col bg-bg">
       <div className="h-16 flex-none px-6 flex items-center justify-between border-b border-border bg-surface/50 backdrop-blur-sm z-10">
         {showDeleteConfirm ? (
-          <div className="flex items-center justify-between w-full bg-red-50 dark:bg-red-900/20 p-2 border border-red-200 dark:border-red-800">
-            <span className="text-red-600 dark:text-red-400 font-medium px-2">
+          <div className="flex items-center justify-between w-full bg-red-950/40 p-2 border border-red-800">
+            <span className="text-red-400 font-medium px-2">
               Delete this file?
             </span>
             <div className="flex gap-2">
               <button
                 autoFocus
                 onClick={() => setShowDeleteConfirm(false)}
-                className="px-3 py-1.5 text-sm font-medium text-text-secondary hover:bg-white/50 transition-colors cursor-pointer"
+                className="px-3 py-1.5 text-sm font-medium text-text-secondary hover:bg-surface-highlight transition-colors cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 onClick={handleDelete}
-                className="px-3 py-1.5 text-sm font-medium text-white bg-red-500 hover:bg-red-600 shadow-sm transition-colors cursor-pointer"
+                className="px-3 py-1.5 text-sm font-medium text-white bg-red-600 hover:bg-red-700 shadow-sm transition-colors cursor-pointer"
               >
                 Confirm
               </button>
@@ -255,7 +260,7 @@ export function AssetPreview({ asset }: { asset: Asset }) {
                 </button>
               )}
               <a
-                href={publicUrl}
+                href={`/api/v1/assets/${asset.id}/download`}
                 download
                 className="p-2 text-text-secondary hover:text-primary hover:bg-primary/10 transition-colors cursor-pointer"
                 title="Download"
@@ -264,7 +269,7 @@ export function AssetPreview({ asset }: { asset: Asset }) {
               </a>
               <button
                 onClick={() => setShowDeleteConfirm(true)}
-                className="p-2 text-text-secondary hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors cursor-pointer"
+                className="p-2 text-text-secondary hover:text-red-500 hover:bg-red-900/20 transition-colors cursor-pointer"
                 title="Delete"
               >
                 <Trash2 size={18} />
@@ -285,14 +290,14 @@ export function AssetPreview({ asset }: { asset: Asset }) {
         <div className="relative w-full h-full max-w-4xl flex items-center justify-center overflow-hidden">
           {asset.file_type === "image" ? (
             <img
-              src={publicUrl}
+              src={`/api/v1/assets/${asset.id}/download`}
               alt={asset.original_filename}
               className="max-w-full max-h-full object-contain shadow-xl"
             />
           ) : asset.file_type === "video" ? (
             <video
               ref={videoRef}
-              src={publicUrl}
+              src={`/api/v1/assets/${asset.id}/download`}
               controls
               className="max-w-full max-h-full bg-black w-full h-full"
             />
@@ -303,7 +308,7 @@ export function AssetPreview({ asset }: { asset: Asset }) {
               </div>
               <audio
                 ref={audioRef}
-                src={publicUrl}
+                src={`/api/v1/assets/${asset.id}/download`}
                 controls
                 className="w-full"
               />
@@ -328,9 +333,9 @@ export function AssetPreview({ asset }: { asset: Asset }) {
               </div>
               <p className="text-text-secondary mb-4">No preview available</p>
               <a
-                href={publicUrl}
+                href={`/api/v1/assets/${asset.id}/download`}
                 download
-                className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white hover:bg-primary-hover transition-colors shadow-lg cursor-pointer"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-background hover:bg-primary-hover transition-colors shadow-lg cursor-pointer"
               >
                 <Download size={16} /> Download File
               </a>
@@ -365,20 +370,39 @@ export function AssetPreview({ asset }: { asset: Asset }) {
           <div
             onClick={() =>
               copyToClipboard(
-                baseUrl ? publicUrl : window.location.origin + publicUrl,
-                "Public URL",
+                isLiveOnCdn && baseUrl
+                  ? publicUrl
+                  : window.location.origin + publicUrl,
+                isLiveOnCdn ? "Public CDN URL" : "Local Download URL",
               )
             }
             className="group cursor-pointer p-4 bg-surface-highlight/20 border border-dashed border-border hover:border-primary hover:bg-primary/5 transition-all"
           >
-            <label className="text-[10px] font-bold text-text-muted uppercase tracking-widest mb-1 block">
-              Public URL (Click to copy)
-            </label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-[10px] font-bold text-text-muted uppercase tracking-widest block">
+                {isLiveOnCdn ? "Public CDN URL" : "Local URL (Pending Sync)"}
+              </label>
+              {isLiveOnCdn ? (
+                <span className="text-[10px] text-emerald-400 font-bold flex items-center gap-1">
+                  <Globe size={10} /> Live
+                </span>
+              ) : asset.cdn_status === "failed" ? (
+                <span className="text-[10px] text-red-400 font-bold flex items-center gap-1">
+                  <AlertCircle size={10} /> Sync Failed
+                </span>
+              ) : (
+                <span className="text-[10px] text-amber-400 font-bold flex items-center gap-1">
+                  <HardDrive size={10} /> Local Only
+                </span>
+              )}
+            </div>
             <div className="flex items-center justify-between gap-2">
               <code className="text-xs font-mono text-text-secondary truncate">
-                {baseUrl ? publicUrl : window.location.origin + publicUrl}
+                {isLiveOnCdn && baseUrl
+                  ? publicUrl
+                  : window.location.origin + publicUrl}
               </code>
-              {copiedField === "Public URL" ? (
+              {copiedField?.includes("URL") ? (
                 <Check size={14} className="text-green-500" />
               ) : (
                 <Copy
@@ -389,7 +413,7 @@ export function AssetPreview({ asset }: { asset: Asset }) {
             </div>
           </div>
         </div>
-        <div className="mt-4 flex gap-6 text-xs text-text-muted border-t border-border/50 pt-4">
+        <div className="mt-4 flex flex-wrap gap-6 text-xs text-text-muted border-t border-border/50 pt-4">
           <div>
             <span className="font-bold uppercase mr-2">Type:</span>{" "}
             {asset.file_type} ({asset.extension})
@@ -399,16 +423,22 @@ export function AssetPreview({ asset }: { asset: Asset }) {
             {formatBytes(asset.file_size_bytes)}
           </div>
           <div>
+            <span className="font-bold uppercase mr-2">MIME:</span>{" "}
+            {asset.mime_type}
+          </div>
+          <div>
             <span className="font-bold uppercase mr-2">Date:</span>{" "}
             {formatDate(asset.created_at)}
           </div>
           {asset.is_compressed && (
             <div>
-              <span className="font-bold uppercase mr-2 text-green-600">
-                Compressed
+              <span className="font-bold uppercase mr-2 text-emerald-400">
+                Optimized
               </span>
               {asset.compression_ratio && (
-                <span>({(asset.compression_ratio * 100).toFixed(0)}%)</span>
+                <span>
+                  ({(asset.compression_ratio * 100).toFixed(0)}% of original)
+                </span>
               )}
             </div>
           )}

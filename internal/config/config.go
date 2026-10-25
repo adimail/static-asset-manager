@@ -25,7 +25,11 @@ type DatabaseConfig struct {
 }
 
 type StorageConfig struct {
-	AssetsDir string
+	AssetsDir         string
+	OriginalsDir      string
+	ThumbnailsDir     string
+	WranglerPath      string
+	CloudflareProject string
 }
 
 type CompressionConfig struct {
@@ -35,9 +39,17 @@ type CompressionConfig struct {
 	VideoMaxHeight     int
 	RetainOriginalDays int
 	FFmpegPath         string
+	OriginalsDir       string
+	ThumbnailsDir      string
+	AssetsDir          string
 }
 
 func Load() *Config {
+	assetsDir := getEnv("STORAGE_ASSETS_DIR", "./cdn/assets")
+	originalsDir := getEnv("STORAGE_ORIGINALS_DIR", "./storage/private/originals")
+	thumbnailsDir := getEnv("STORAGE_THUMBNAILS_DIR", "./cdn/thumbnails")
+	ffmpegPath := getEnv("FFMPEG_PATH", "ffmpeg")
+
 	return &Config{
 		Server: ServerConfig{
 			Port:          getEnv("SERVER_PORT", "8080"),
@@ -49,7 +61,11 @@ func Load() *Config {
 			Path: getEnv("DATABASE_PATH", "./data/assets.db"),
 		},
 		Storage: StorageConfig{
-			AssetsDir: getEnv("STORAGE_ASSETS_DIR", "./cdn/assets"),
+			AssetsDir:         assetsDir,
+			OriginalsDir:      originalsDir,
+			ThumbnailsDir:     thumbnailsDir,
+			WranglerPath:      getEnv("WRANGLER_PATH", "wrangler"),
+			CloudflareProject: getEnv("CLOUDFLARE_PROJECT", "orion-static-cdn"),
 		},
 		Compression: CompressionConfig{
 			Enabled:            getEnv("COMPRESSION_ENABLED", "true") == "true",
@@ -57,7 +73,10 @@ func Load() *Config {
 			ImageQuality:       getEnvInt("COMPRESSION_IMAGE_QUALITY", 85),
 			VideoMaxHeight:     getEnvInt("COMPRESSION_VIDEO_MAX_HEIGHT", 1080),
 			RetainOriginalDays: getEnvInt("COMPRESSION_RETAIN_DAYS", 7),
-			FFmpegPath:         getEnv("FFMPEG_PATH", "ffmpeg"),
+			FFmpegPath:         ffmpegPath,
+			OriginalsDir:       originalsDir,
+			ThumbnailsDir:      thumbnailsDir,
+			AssetsDir:          assetsDir,
 		},
 	}
 }

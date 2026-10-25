@@ -23,7 +23,6 @@ func NewServer(assetService *assets.Service, tagService *tags.Service) http.Hand
 
 	api := r.PathPrefix("/api/v1").Subrouter()
 
-	// Assets
 	api.HandleFunc("/assets", h.Upload).Methods("POST")
 	api.HandleFunc("/assets", h.List).Methods("GET")
 	api.HandleFunc("/assets/bulk/delete", h.BulkDelete).Methods("POST")
@@ -31,10 +30,13 @@ func NewServer(assetService *assets.Service, tagService *tags.Service) http.Hand
 	api.HandleFunc("/assets/{id}", h.Delete).Methods("DELETE")
 	api.HandleFunc("/assets/{id}", h.Update).Methods("PUT")
 	api.HandleFunc("/assets/{id}/download", h.Download).Methods("GET")
+	api.HandleFunc("/assets/{id}/thumbnail", h.Thumbnail).Methods("GET")
 	api.HandleFunc("/assets/{id}/compress", h.Compress).Methods("POST")
 	api.HandleFunc("/assets/{id}/tags", th.TagAsset).Methods("POST")
 
-	// Tags
+	api.HandleFunc("/cdn/sync", h.SyncCDN).Methods("POST")
+	api.HandleFunc("/cdn/status", h.GetCDNStatus).Methods("GET")
+
 	api.HandleFunc("/tags", th.Create).Methods("POST")
 	api.HandleFunc("/tags", th.List).Methods("GET")
 	api.HandleFunc("/tags/bulk/assets", th.BulkTagAssets).Methods("POST")
@@ -57,7 +59,7 @@ func NewServer(assetService *assets.Service, tagService *tags.Service) http.Hand
 	}))
 
 	c := cors.New(cors.Options{
-		AllowedOrigins: []string{"*"},
+		AllowedOrigins: []string{"http://localhost:5173", "http://localhost:8080", "http://127.0.0.1:5173", "http://127.0.0.1:8080"},
 		AllowedMethods: []string{"GET", "POST", "DELETE", "PUT", "OPTIONS"},
 		AllowedHeaders: []string{"*"},
 	})

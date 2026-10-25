@@ -110,6 +110,31 @@ func CompressionRatio(v float64) predicate.Asset {
 	return predicate.Asset(sql.FieldEQ(FieldCompressionRatio, v))
 }
 
+// ContentHash applies equality check predicate on the "content_hash" field. It's identical to ContentHashEQ.
+func ContentHash(v string) predicate.Asset {
+	return predicate.Asset(sql.FieldEQ(FieldContentHash, v))
+}
+
+// MimeType applies equality check predicate on the "mime_type" field. It's identical to MimeTypeEQ.
+func MimeType(v string) predicate.Asset {
+	return predicate.Asset(sql.FieldEQ(FieldMimeType, v))
+}
+
+// ThumbnailPath applies equality check predicate on the "thumbnail_path" field. It's identical to ThumbnailPathEQ.
+func ThumbnailPath(v string) predicate.Asset {
+	return predicate.Asset(sql.FieldEQ(FieldThumbnailPath, v))
+}
+
+// CdnStatus applies equality check predicate on the "cdn_status" field. It's identical to CdnStatusEQ.
+func CdnStatus(v string) predicate.Asset {
+	return predicate.Asset(sql.FieldEQ(FieldCdnStatus, v))
+}
+
+// LastSyncedAt applies equality check predicate on the "last_synced_at" field. It's identical to LastSyncedAtEQ.
+func LastSyncedAt(v time.Time) predicate.Asset {
+	return predicate.Asset(sql.FieldEQ(FieldLastSyncedAt, v))
+}
+
 // OriginalFilenameEQ applies the EQ predicate on the "original_filename" field.
 func OriginalFilenameEQ(v string) predicate.Asset {
 	return predicate.Asset(sql.FieldEQ(FieldOriginalFilename, v))
@@ -583,6 +608,336 @@ func CompressionRatioIsNil() predicate.Asset {
 // CompressionRatioNotNil applies the NotNil predicate on the "compression_ratio" field.
 func CompressionRatioNotNil() predicate.Asset {
 	return predicate.Asset(sql.FieldNotNull(FieldCompressionRatio))
+}
+
+// ContentHashEQ applies the EQ predicate on the "content_hash" field.
+func ContentHashEQ(v string) predicate.Asset {
+	return predicate.Asset(sql.FieldEQ(FieldContentHash, v))
+}
+
+// ContentHashNEQ applies the NEQ predicate on the "content_hash" field.
+func ContentHashNEQ(v string) predicate.Asset {
+	return predicate.Asset(sql.FieldNEQ(FieldContentHash, v))
+}
+
+// ContentHashIn applies the In predicate on the "content_hash" field.
+func ContentHashIn(vs ...string) predicate.Asset {
+	return predicate.Asset(sql.FieldIn(FieldContentHash, vs...))
+}
+
+// ContentHashNotIn applies the NotIn predicate on the "content_hash" field.
+func ContentHashNotIn(vs ...string) predicate.Asset {
+	return predicate.Asset(sql.FieldNotIn(FieldContentHash, vs...))
+}
+
+// ContentHashGT applies the GT predicate on the "content_hash" field.
+func ContentHashGT(v string) predicate.Asset {
+	return predicate.Asset(sql.FieldGT(FieldContentHash, v))
+}
+
+// ContentHashGTE applies the GTE predicate on the "content_hash" field.
+func ContentHashGTE(v string) predicate.Asset {
+	return predicate.Asset(sql.FieldGTE(FieldContentHash, v))
+}
+
+// ContentHashLT applies the LT predicate on the "content_hash" field.
+func ContentHashLT(v string) predicate.Asset {
+	return predicate.Asset(sql.FieldLT(FieldContentHash, v))
+}
+
+// ContentHashLTE applies the LTE predicate on the "content_hash" field.
+func ContentHashLTE(v string) predicate.Asset {
+	return predicate.Asset(sql.FieldLTE(FieldContentHash, v))
+}
+
+// ContentHashContains applies the Contains predicate on the "content_hash" field.
+func ContentHashContains(v string) predicate.Asset {
+	return predicate.Asset(sql.FieldContains(FieldContentHash, v))
+}
+
+// ContentHashHasPrefix applies the HasPrefix predicate on the "content_hash" field.
+func ContentHashHasPrefix(v string) predicate.Asset {
+	return predicate.Asset(sql.FieldHasPrefix(FieldContentHash, v))
+}
+
+// ContentHashHasSuffix applies the HasSuffix predicate on the "content_hash" field.
+func ContentHashHasSuffix(v string) predicate.Asset {
+	return predicate.Asset(sql.FieldHasSuffix(FieldContentHash, v))
+}
+
+// ContentHashIsNil applies the IsNil predicate on the "content_hash" field.
+func ContentHashIsNil() predicate.Asset {
+	return predicate.Asset(sql.FieldIsNull(FieldContentHash))
+}
+
+// ContentHashNotNil applies the NotNil predicate on the "content_hash" field.
+func ContentHashNotNil() predicate.Asset {
+	return predicate.Asset(sql.FieldNotNull(FieldContentHash))
+}
+
+// ContentHashEqualFold applies the EqualFold predicate on the "content_hash" field.
+func ContentHashEqualFold(v string) predicate.Asset {
+	return predicate.Asset(sql.FieldEqualFold(FieldContentHash, v))
+}
+
+// ContentHashContainsFold applies the ContainsFold predicate on the "content_hash" field.
+func ContentHashContainsFold(v string) predicate.Asset {
+	return predicate.Asset(sql.FieldContainsFold(FieldContentHash, v))
+}
+
+// MimeTypeEQ applies the EQ predicate on the "mime_type" field.
+func MimeTypeEQ(v string) predicate.Asset {
+	return predicate.Asset(sql.FieldEQ(FieldMimeType, v))
+}
+
+// MimeTypeNEQ applies the NEQ predicate on the "mime_type" field.
+func MimeTypeNEQ(v string) predicate.Asset {
+	return predicate.Asset(sql.FieldNEQ(FieldMimeType, v))
+}
+
+// MimeTypeIn applies the In predicate on the "mime_type" field.
+func MimeTypeIn(vs ...string) predicate.Asset {
+	return predicate.Asset(sql.FieldIn(FieldMimeType, vs...))
+}
+
+// MimeTypeNotIn applies the NotIn predicate on the "mime_type" field.
+func MimeTypeNotIn(vs ...string) predicate.Asset {
+	return predicate.Asset(sql.FieldNotIn(FieldMimeType, vs...))
+}
+
+// MimeTypeGT applies the GT predicate on the "mime_type" field.
+func MimeTypeGT(v string) predicate.Asset {
+	return predicate.Asset(sql.FieldGT(FieldMimeType, v))
+}
+
+// MimeTypeGTE applies the GTE predicate on the "mime_type" field.
+func MimeTypeGTE(v string) predicate.Asset {
+	return predicate.Asset(sql.FieldGTE(FieldMimeType, v))
+}
+
+// MimeTypeLT applies the LT predicate on the "mime_type" field.
+func MimeTypeLT(v string) predicate.Asset {
+	return predicate.Asset(sql.FieldLT(FieldMimeType, v))
+}
+
+// MimeTypeLTE applies the LTE predicate on the "mime_type" field.
+func MimeTypeLTE(v string) predicate.Asset {
+	return predicate.Asset(sql.FieldLTE(FieldMimeType, v))
+}
+
+// MimeTypeContains applies the Contains predicate on the "mime_type" field.
+func MimeTypeContains(v string) predicate.Asset {
+	return predicate.Asset(sql.FieldContains(FieldMimeType, v))
+}
+
+// MimeTypeHasPrefix applies the HasPrefix predicate on the "mime_type" field.
+func MimeTypeHasPrefix(v string) predicate.Asset {
+	return predicate.Asset(sql.FieldHasPrefix(FieldMimeType, v))
+}
+
+// MimeTypeHasSuffix applies the HasSuffix predicate on the "mime_type" field.
+func MimeTypeHasSuffix(v string) predicate.Asset {
+	return predicate.Asset(sql.FieldHasSuffix(FieldMimeType, v))
+}
+
+// MimeTypeEqualFold applies the EqualFold predicate on the "mime_type" field.
+func MimeTypeEqualFold(v string) predicate.Asset {
+	return predicate.Asset(sql.FieldEqualFold(FieldMimeType, v))
+}
+
+// MimeTypeContainsFold applies the ContainsFold predicate on the "mime_type" field.
+func MimeTypeContainsFold(v string) predicate.Asset {
+	return predicate.Asset(sql.FieldContainsFold(FieldMimeType, v))
+}
+
+// ThumbnailPathEQ applies the EQ predicate on the "thumbnail_path" field.
+func ThumbnailPathEQ(v string) predicate.Asset {
+	return predicate.Asset(sql.FieldEQ(FieldThumbnailPath, v))
+}
+
+// ThumbnailPathNEQ applies the NEQ predicate on the "thumbnail_path" field.
+func ThumbnailPathNEQ(v string) predicate.Asset {
+	return predicate.Asset(sql.FieldNEQ(FieldThumbnailPath, v))
+}
+
+// ThumbnailPathIn applies the In predicate on the "thumbnail_path" field.
+func ThumbnailPathIn(vs ...string) predicate.Asset {
+	return predicate.Asset(sql.FieldIn(FieldThumbnailPath, vs...))
+}
+
+// ThumbnailPathNotIn applies the NotIn predicate on the "thumbnail_path" field.
+func ThumbnailPathNotIn(vs ...string) predicate.Asset {
+	return predicate.Asset(sql.FieldNotIn(FieldThumbnailPath, vs...))
+}
+
+// ThumbnailPathGT applies the GT predicate on the "thumbnail_path" field.
+func ThumbnailPathGT(v string) predicate.Asset {
+	return predicate.Asset(sql.FieldGT(FieldThumbnailPath, v))
+}
+
+// ThumbnailPathGTE applies the GTE predicate on the "thumbnail_path" field.
+func ThumbnailPathGTE(v string) predicate.Asset {
+	return predicate.Asset(sql.FieldGTE(FieldThumbnailPath, v))
+}
+
+// ThumbnailPathLT applies the LT predicate on the "thumbnail_path" field.
+func ThumbnailPathLT(v string) predicate.Asset {
+	return predicate.Asset(sql.FieldLT(FieldThumbnailPath, v))
+}
+
+// ThumbnailPathLTE applies the LTE predicate on the "thumbnail_path" field.
+func ThumbnailPathLTE(v string) predicate.Asset {
+	return predicate.Asset(sql.FieldLTE(FieldThumbnailPath, v))
+}
+
+// ThumbnailPathContains applies the Contains predicate on the "thumbnail_path" field.
+func ThumbnailPathContains(v string) predicate.Asset {
+	return predicate.Asset(sql.FieldContains(FieldThumbnailPath, v))
+}
+
+// ThumbnailPathHasPrefix applies the HasPrefix predicate on the "thumbnail_path" field.
+func ThumbnailPathHasPrefix(v string) predicate.Asset {
+	return predicate.Asset(sql.FieldHasPrefix(FieldThumbnailPath, v))
+}
+
+// ThumbnailPathHasSuffix applies the HasSuffix predicate on the "thumbnail_path" field.
+func ThumbnailPathHasSuffix(v string) predicate.Asset {
+	return predicate.Asset(sql.FieldHasSuffix(FieldThumbnailPath, v))
+}
+
+// ThumbnailPathIsNil applies the IsNil predicate on the "thumbnail_path" field.
+func ThumbnailPathIsNil() predicate.Asset {
+	return predicate.Asset(sql.FieldIsNull(FieldThumbnailPath))
+}
+
+// ThumbnailPathNotNil applies the NotNil predicate on the "thumbnail_path" field.
+func ThumbnailPathNotNil() predicate.Asset {
+	return predicate.Asset(sql.FieldNotNull(FieldThumbnailPath))
+}
+
+// ThumbnailPathEqualFold applies the EqualFold predicate on the "thumbnail_path" field.
+func ThumbnailPathEqualFold(v string) predicate.Asset {
+	return predicate.Asset(sql.FieldEqualFold(FieldThumbnailPath, v))
+}
+
+// ThumbnailPathContainsFold applies the ContainsFold predicate on the "thumbnail_path" field.
+func ThumbnailPathContainsFold(v string) predicate.Asset {
+	return predicate.Asset(sql.FieldContainsFold(FieldThumbnailPath, v))
+}
+
+// CdnStatusEQ applies the EQ predicate on the "cdn_status" field.
+func CdnStatusEQ(v string) predicate.Asset {
+	return predicate.Asset(sql.FieldEQ(FieldCdnStatus, v))
+}
+
+// CdnStatusNEQ applies the NEQ predicate on the "cdn_status" field.
+func CdnStatusNEQ(v string) predicate.Asset {
+	return predicate.Asset(sql.FieldNEQ(FieldCdnStatus, v))
+}
+
+// CdnStatusIn applies the In predicate on the "cdn_status" field.
+func CdnStatusIn(vs ...string) predicate.Asset {
+	return predicate.Asset(sql.FieldIn(FieldCdnStatus, vs...))
+}
+
+// CdnStatusNotIn applies the NotIn predicate on the "cdn_status" field.
+func CdnStatusNotIn(vs ...string) predicate.Asset {
+	return predicate.Asset(sql.FieldNotIn(FieldCdnStatus, vs...))
+}
+
+// CdnStatusGT applies the GT predicate on the "cdn_status" field.
+func CdnStatusGT(v string) predicate.Asset {
+	return predicate.Asset(sql.FieldGT(FieldCdnStatus, v))
+}
+
+// CdnStatusGTE applies the GTE predicate on the "cdn_status" field.
+func CdnStatusGTE(v string) predicate.Asset {
+	return predicate.Asset(sql.FieldGTE(FieldCdnStatus, v))
+}
+
+// CdnStatusLT applies the LT predicate on the "cdn_status" field.
+func CdnStatusLT(v string) predicate.Asset {
+	return predicate.Asset(sql.FieldLT(FieldCdnStatus, v))
+}
+
+// CdnStatusLTE applies the LTE predicate on the "cdn_status" field.
+func CdnStatusLTE(v string) predicate.Asset {
+	return predicate.Asset(sql.FieldLTE(FieldCdnStatus, v))
+}
+
+// CdnStatusContains applies the Contains predicate on the "cdn_status" field.
+func CdnStatusContains(v string) predicate.Asset {
+	return predicate.Asset(sql.FieldContains(FieldCdnStatus, v))
+}
+
+// CdnStatusHasPrefix applies the HasPrefix predicate on the "cdn_status" field.
+func CdnStatusHasPrefix(v string) predicate.Asset {
+	return predicate.Asset(sql.FieldHasPrefix(FieldCdnStatus, v))
+}
+
+// CdnStatusHasSuffix applies the HasSuffix predicate on the "cdn_status" field.
+func CdnStatusHasSuffix(v string) predicate.Asset {
+	return predicate.Asset(sql.FieldHasSuffix(FieldCdnStatus, v))
+}
+
+// CdnStatusEqualFold applies the EqualFold predicate on the "cdn_status" field.
+func CdnStatusEqualFold(v string) predicate.Asset {
+	return predicate.Asset(sql.FieldEqualFold(FieldCdnStatus, v))
+}
+
+// CdnStatusContainsFold applies the ContainsFold predicate on the "cdn_status" field.
+func CdnStatusContainsFold(v string) predicate.Asset {
+	return predicate.Asset(sql.FieldContainsFold(FieldCdnStatus, v))
+}
+
+// LastSyncedAtEQ applies the EQ predicate on the "last_synced_at" field.
+func LastSyncedAtEQ(v time.Time) predicate.Asset {
+	return predicate.Asset(sql.FieldEQ(FieldLastSyncedAt, v))
+}
+
+// LastSyncedAtNEQ applies the NEQ predicate on the "last_synced_at" field.
+func LastSyncedAtNEQ(v time.Time) predicate.Asset {
+	return predicate.Asset(sql.FieldNEQ(FieldLastSyncedAt, v))
+}
+
+// LastSyncedAtIn applies the In predicate on the "last_synced_at" field.
+func LastSyncedAtIn(vs ...time.Time) predicate.Asset {
+	return predicate.Asset(sql.FieldIn(FieldLastSyncedAt, vs...))
+}
+
+// LastSyncedAtNotIn applies the NotIn predicate on the "last_synced_at" field.
+func LastSyncedAtNotIn(vs ...time.Time) predicate.Asset {
+	return predicate.Asset(sql.FieldNotIn(FieldLastSyncedAt, vs...))
+}
+
+// LastSyncedAtGT applies the GT predicate on the "last_synced_at" field.
+func LastSyncedAtGT(v time.Time) predicate.Asset {
+	return predicate.Asset(sql.FieldGT(FieldLastSyncedAt, v))
+}
+
+// LastSyncedAtGTE applies the GTE predicate on the "last_synced_at" field.
+func LastSyncedAtGTE(v time.Time) predicate.Asset {
+	return predicate.Asset(sql.FieldGTE(FieldLastSyncedAt, v))
+}
+
+// LastSyncedAtLT applies the LT predicate on the "last_synced_at" field.
+func LastSyncedAtLT(v time.Time) predicate.Asset {
+	return predicate.Asset(sql.FieldLT(FieldLastSyncedAt, v))
+}
+
+// LastSyncedAtLTE applies the LTE predicate on the "last_synced_at" field.
+func LastSyncedAtLTE(v time.Time) predicate.Asset {
+	return predicate.Asset(sql.FieldLTE(FieldLastSyncedAt, v))
+}
+
+// LastSyncedAtIsNil applies the IsNil predicate on the "last_synced_at" field.
+func LastSyncedAtIsNil() predicate.Asset {
+	return predicate.Asset(sql.FieldIsNull(FieldLastSyncedAt))
+}
+
+// LastSyncedAtNotNil applies the NotNil predicate on the "last_synced_at" field.
+func LastSyncedAtNotNil() predicate.Asset {
+	return predicate.Asset(sql.FieldNotNull(FieldLastSyncedAt))
 }
 
 // HasTags applies the HasEdge predicate on the "tags" edge.

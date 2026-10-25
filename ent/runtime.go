@@ -25,6 +25,14 @@ func init() {
 	assetDescIsCompressed := assetFields[7].Descriptor()
 	// asset.DefaultIsCompressed holds the default value on creation for the is_compressed field.
 	asset.DefaultIsCompressed = assetDescIsCompressed.Default.(bool)
+	// assetDescMimeType is the schema descriptor for mime_type field.
+	assetDescMimeType := assetFields[11].Descriptor()
+	// asset.DefaultMimeType holds the default value on creation for the mime_type field.
+	asset.DefaultMimeType = assetDescMimeType.Default.(string)
+	// assetDescCdnStatus is the schema descriptor for cdn_status field.
+	assetDescCdnStatus := assetFields[13].Descriptor()
+	// asset.DefaultCdnStatus holds the default value on creation for the cdn_status field.
+	asset.DefaultCdnStatus = assetDescCdnStatus.Default.(string)
 	// assetDescID is the schema descriptor for id field.
 	assetDescID := assetFields[0].Descriptor()
 	// asset.DefaultID holds the default value on creation for the id field.

@@ -7,6 +7,7 @@ import (
 	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
+	"entgo.io/ent/schema/index"
 	"github.com/google/uuid"
 )
 
@@ -23,11 +24,14 @@ func (Asset) Fields() []ent.Field {
 		field.Int64("file_size_bytes"),
 		field.String("storage_path"),
 		field.Time("created_at").Default(time.Now),
-
-		// Compression fields
 		field.Bool("is_compressed").Default(false),
 		field.String("original_path").Optional(),
 		field.Float("compression_ratio").Optional(),
+		field.String("content_hash").Optional(),
+		field.String("mime_type").Default("application/octet-stream"),
+		field.String("thumbnail_path").Optional(),
+		field.String("cdn_status").Default("local_only"),
+		field.Time("last_synced_at").Optional().Nillable(),
 	}
 }
 
@@ -35,5 +39,12 @@ func (Asset) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("tags", Tag.Type),
 		edge.To("compression_jobs", CompressionJob.Type).Annotations(entsql.OnDelete(entsql.Cascade)),
+	}
+}
+
+func (Asset) Indexes() []ent.Index {
+	return []ent.Index{
+		index.Fields("content_hash"),
+		index.Fields("cdn_status"),
 	}
 }
